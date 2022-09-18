@@ -1,14 +1,9 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from schemas import AccountBase as Account
 from fastapi.encoders import jsonable_encoder
 import uuid
 
 app = FastAPI()
-
-
-class Account(BaseModel):
-    name: str | None = None
-    email: str | None = None
 
 
 accounts = {
