@@ -6,6 +6,7 @@ __pycache__/
 
 # db
 sql_app.db
+test_*.db
 
 # C extensions
 *.so
