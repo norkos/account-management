@@ -1,51 +1,52 @@
-from fastapi import FastAPI
-from schemas import AccountBase as Account
-from fastapi.encoders import jsonable_encoder
-import uuid
+from fastapi import Depends, FastAPI, HTTPException
+from sql_app import models, schemas, crud
+from sql_app.database import engine, SessionLocal
+from sqlalchemy.orm import Session
 
 app = FastAPI()
+models.Base.metadata.create_all(bind=engine)
 
 
-accounts = {
-    uuid.uuid4().hex: {"name": 'my name is foo', 'email': 'nk@wp.pl'},
-    uuid.uuid4().hex: {"name": 'my name is bar', 'email': 'bk@wp.pl'},
-    uuid.uuid4().hex: {"name": 'my name is tar', 'email': 'ck@wp.pl'}
-}
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
-async def root():
+def root():
+    return "Hello my friend !"
+
+
+@app.get('/accounts/{account_id}', response_model=schemas.Account)
+def read_account(account_id: int, db: Session = Depends(get_db)):
+    db_account = crud.get_account(db, account_id)
+    if db_account is None:
+        raise HTTPException(status_code=404, detail='Account not found')
+    return db_account
+
+
+@app.get('/accounts/', response_model=list[schemas.Account])
+def read_accounts(db: Session = Depends(get_db)):
+    accounts = crud.get_accounts(db)
     return accounts
 
 
-@app.get('/accounts/{account_uuid}', response_model=Account)
-async def read_account(account_uuid: str):
-    return accounts[account_uuid]
+@app.post('/accounts', response_model=schemas.Account)
+def create_account(account: schemas.Account, db: Session = Depends(get_db)):
+    db_account = crud.get_account(db, account.id)
+    if db_account:
+        raise HTTPException(status_code=400, detail='Email already used')
+    return crud.create_account(db, account)
 
-
-@app.get('/accounts')
-async def read_account():
-    return accounts
-
-
-@app.put('/accounts', response_model=Account)
-async def create_account(account: Account):
-    updated_item_encoded = jsonable_encoder(account)
-    accounts[uuid.uuid4().hex] = updated_item_encoded
-    return updated_item_encoded
-
-
-@app.delete('/accounts/{account_uuid}', response_model=Account)
-async def delete_account(account_uuid: str):
-    return accounts.pop(account_uuid)
-
-
-@app.patch('/accounts/{account_uuid}', response_model=Account)
-async def update_account(account_uuid: str, account: Account):
-    stored_item_data = accounts[account_uuid]
-    store_item_model = Account(**stored_item_data)
-    update_data = account.dict(exclude_unset=True)
-    updated_item = store_item_model.copy(update=update_data)
-    accounts[account_uuid] = jsonable_encoder(updated_item)
-    return updated_item
+#@app.patch('/accounts/{account_uuid}', response_model=schemas.Account)
+#async def update_account(account_uuid: str, account: schemas.Account):
+#    stored_item_data = accounts[account_uuid]
+#    store_item_model = schemas.Account(**stored_item_data)
+#    update_data = account.dict(exclude_unset=True)
+#    updated_item = store_item_model.copy(update=update_data)
+#    accounts[account_uuid] = jsonable_encoder(updated_item)
+#    return updated_item
 
