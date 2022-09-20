@@ -4,7 +4,11 @@ from sql_app import models, schemas
 from sql_app.database import engine, SessionLocal
 from sqlalchemy.orm import Session
 
-app = FastAPI()
+app = FastAPI(
+    title='account-management',
+    version='0.1',
+    docs_url='/_swagger',
+)
 models.Base.metadata.create_all(bind=engine)
 
 fake_secret_token = "coneofsilence"
@@ -52,3 +56,4 @@ def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)
     if db_account:
         raise HTTPException(status_code=400, detail='Email already used')
     return crud.create_account(db, account)
+
