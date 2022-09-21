@@ -4,8 +4,9 @@ from sqlalchemy.orm import sessionmaker
 
 from sql_app.database import Base
 
-from main import fake_secret_token
 from main import app, get_db
+
+from env import API_TOKEN
 
 import uuid
 
@@ -41,7 +42,7 @@ def test_read_main():
 def test_create_account():
     response = client.post(
         '/accounts/',
-        headers={"X-Token": fake_secret_token},
+        headers={"X-Token": API_TOKEN},
         json={'name': 'my_name', 'email': 'test@mail.com'}
     )
     assert response.status_code == 200
@@ -62,7 +63,7 @@ def test_read_accounts_bad_token():
 def test_read_account():
     response = client.get(
         '/accounts/1',
-        headers={"X-Token": fake_secret_token}
+        headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 200
     assert response.json() == {
@@ -84,19 +85,19 @@ def test_read_account_bad_token():
 def test_read_accounts():
     client.post(
         '/accounts/',
-        headers={"X-Token": fake_secret_token},
+        headers={"X-Token": API_TOKEN},
         json={'name': 'my_name', 'email': 'test2@mail.com'}
     )
 
     client.post(
         '/accounts/',
-        headers={"X-Token": fake_secret_token},
+        headers={"X-Token": API_TOKEN},
         json={'name': 'my_name', 'email': 'test3@mail.com'}
     )
 
     response = client.get(
         '/accounts/',
-        headers={"X-Token": fake_secret_token}
+        headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 200
     assert len(response.json()) >= 3

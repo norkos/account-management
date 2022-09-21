@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 80
+      NORKOS-AUTH-TOKEN: local-one-will-be-overwritten
     ports:
       - 8000:80 #localhost:Dockerfile
     volumes:

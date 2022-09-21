@@ -2,6 +2,12 @@ Hello,
 
 for Docker please run 'docker-compose up'.
 for pytest please run 'pytest'
-For Heroku please follow https://devcenter.heroku.com/articles/container-registry-and-runtime
+For Heroku please follow https://devcenter.heroku.com/articles/container-registry-and-runtime:
+    heroku login
+    heroku container:login
+    heroku create
+    heroku container:push web
+    heroku container:release web
+    heroku open
 
 Have fun ;)
