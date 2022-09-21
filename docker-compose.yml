@@ -5,7 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "cd src && uvicorn main:app --reload --host 0.0.0.0 --port 80"
+    environment:
+      PORT: 80
     ports:
       - 8000:80 #localhost:Dockerfile
     volumes:
