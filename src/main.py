@@ -5,6 +5,7 @@ from sql_app.database import engine, SessionLocal
 from sqlalchemy.orm import Session
 
 from env import API_TOKEN
+from email_checker import check
 
 app = FastAPI(
     title='account-management',
@@ -32,7 +33,11 @@ def read_account(account_id: int, db: Session = Depends(get_db), x_token: str = 
     if x_token != API_TOKEN:
         raise HTTPException(status_code=400, detail="Invalid X-Token header")
 
-    db_account = crud.get_account(db, account_id)
+    try:
+        db_account = crud.get_account(db, account_id)
+    except:
+        raise HTTPException(status_code=400, detail='Account not found')
+
     if db_account is None:
         raise HTTPException(status_code=404, detail='Account not found')
     return db_account
@@ -51,6 +56,9 @@ def read_accounts(db: Session = Depends(get_db), x_token: str = Header()):
 def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db), x_token: str = Header()):
     if x_token != API_TOKEN:
         raise HTTPException(status_code=400, detail="Invalid X-Token header")
+
+    if not check(account.email):
+        raise HTTPException(status_code=404, detail="Invalid email")
 
     db_account = crud.get_account_by_email(db, account.email)
     if db_account:
