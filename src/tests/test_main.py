@@ -56,7 +56,7 @@ def test_create_account_wrong_mail():
         headers={"X-Token": API_TOKEN},
         json={'name': 'my_name', 'email': 'test@mail.com;)'}
     )
-    assert response.status_code == 404
+    assert response.status_code == 400
     assert response.json() == {"detail": "Invalid email"}
 
 
@@ -98,6 +98,15 @@ def test_read_account_bad_id():
         headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 400
+    assert response.json() == {"detail": "Invalid request"}
+
+
+def test_read_account_not_found():
+    response = client.get(
+        '/accounts/100',
+        headers={"X-Token": API_TOKEN}
+    )
+    assert response.status_code == 404
     assert response.json() == {"detail": "Account not found"}
 
 

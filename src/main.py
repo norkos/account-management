@@ -36,7 +36,7 @@ def read_account(account_id: int, db: Session = Depends(get_db), x_token: str = 
     try:
         db_account = crud.get_account(db, account_id)
     except:
-        raise HTTPException(status_code=400, detail='Account not found')
+        raise HTTPException(status_code=400, detail='Invalid request')
 
     if db_account is None:
         raise HTTPException(status_code=404, detail='Account not found')
@@ -58,7 +58,7 @@ def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Invalid X-Token header")
 
     if not check(account.email):
-        raise HTTPException(status_code=404, detail="Invalid email")
+        raise HTTPException(status_code=400, detail="Invalid email")
 
     db_account = crud.get_account_by_email(db, account.email)
     if db_account:
