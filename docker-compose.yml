@@ -1,6 +1,16 @@
 version: '3.9'
 services:
 
+  rabbitmq:
+    image: 'rabbitmq:3.10-management-alpine'
+    ports:
+      # The standard AMQP protocol port
+      - '5672:5672'
+       # HTTP management UI
+      - '15672:15672'
+    networks:
+      - network
+
   backend:
     build:
       context: .
@@ -8,7 +18,26 @@ services:
     environment:
       PORT: 80
       NORKOS-AUTH-TOKEN: local-one-will-be-overwritten
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     ports:
       - 8000:80 #localhost:Dockerfile
     volumes:
       - .:/app
+    networks:
+      - network
+
+  consumer:
+    # If needed, Docker Compose will automatically run consumer/Dockerfile.
+    build: consumer
+
+    # Environment variables:
+    environment:
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+
+    # Again, run on the private network.  Needed to see the "rabbitmq"
+    # magic Docker DNS name.
+    networks:
+      - network
+
+networks:
+  network: {}

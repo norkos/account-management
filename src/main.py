@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from env import API_TOKEN
 from email_checker import check
+from publish import RabbitPublisher
 
 app = FastAPI(
     title='account-management',
@@ -13,6 +14,9 @@ app = FastAPI(
     docs_url='/_swagger',
 )
 models.Base.metadata.create_all(bind=engine)
+
+
+producer = RabbitPublisher()
 
 
 def get_db():
@@ -63,5 +67,9 @@ def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)
     db_account = crud.get_account_by_email(db, account.email)
     if db_account:
         raise HTTPException(status_code=400, detail='Email already used')
-    return crud.create_account(db, account)
+
+    result = crud.create_account(db, account)
+    producer.publish('create_account', result.id)
+
+    return result
 

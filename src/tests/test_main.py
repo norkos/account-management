@@ -5,10 +5,15 @@ from sqlalchemy.orm import sessionmaker
 from sql_app.database import Base
 
 from main import app, get_db
-
-from env import API_TOKEN
+import publish
 
 import uuid
+
+from env import API_TOKEN
+import mock
+
+from unittest.mock import ANY
+
 
 # stub the DB
 SQLALCHEMY_DATABASE_URL = f'sqlite:///./tmp/test_{uuid.uuid4().hex}.db'
@@ -39,12 +44,15 @@ def test_read_main():
     assert response.json() == {'msg': 'Hello my friend !'}
 
 
-def test_create_account():
+@mock.patch.object(publish.RabbitPublisher, 'publish', autospec=True)
+def test_create_account(mock_publish):
     response = client.post(
         '/accounts/',
         headers={"X-Token": API_TOKEN},
         json={'name': 'my_name', 'email': 'test@mail.com'}
     )
+
+    mock_publish.assert_called_once_with(ANY, method="create_account", body=1)
     assert response.status_code == 200
     assert response.json()['name'] == 'my_name'
     assert response.json()['email'] == 'test@mail.com'
@@ -110,7 +118,8 @@ def test_read_account_not_found():
     assert response.json() == {"detail": "Account not found"}
 
 
-def test_read_accounts():
+@mock.patch.object(publish.RabbitPublisher, 'publish', autospec=True)
+def test_read_accounts(mock_publish):
     client.post(
         '/accounts/',
         headers={"X-Token": API_TOKEN},
