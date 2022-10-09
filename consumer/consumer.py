@@ -7,7 +7,7 @@ def main():
     params = pika.URLParameters(os.getenv('CLOUDAMQP_URL'))
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
-    channel.queue_declare(queue='main')
+    channel.queue_declare(queue='main', durable=True)
 
     def callback(ch, method, properties, body):
         print('Received in main')

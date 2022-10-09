@@ -27,15 +27,9 @@ services:
       - network
 
   consumer:
-    # If needed, Docker Compose will automatically run consumer/Dockerfile.
     build: consumer
-
-    # Environment variables:
     environment:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
-
-    # Again, run on the private network.  Needed to see the "rabbitmq"
-    # magic Docker DNS name.
     networks:
       - network
 

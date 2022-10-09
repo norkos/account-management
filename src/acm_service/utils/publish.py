@@ -17,6 +17,7 @@ class RabbitPublisher:
 
         if self.channel is None:
             self.channel = self.connection.channel()
+            self.channel.queue_declare(queue='main', durable=True)
 
         properties = pika.BasicProperties(method)
         self.channel.basic_publish(exchange='', routing_key='main', body=json.dumps(body), properties=properties)
