@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, Header
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
 
