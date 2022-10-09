@@ -8,7 +8,7 @@ from acm_service.sql_app.database import SessionLocal
 from acm_service.utils.env import API_TOKEN
 from acm_service.utils.email_checker import check
 from acm_service.utils.publish import RabbitPublisher
-
+from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
 
 producer = RabbitPublisher()
 
@@ -23,7 +23,7 @@ def get_db():
 
 async def get_token_header(x_token: str = Header()):
     if x_token != API_TOKEN:
-        raise HTTPException(status_code=400, detail="Invalid X-Token header")
+        raise_bad_request("Invalid X-Token header")
 
 
 router = APIRouter(
@@ -35,33 +35,31 @@ router = APIRouter(
 
 @router.get('/{account_id}', response_model=schemas.Account)
 def read_account(account_id: int, db: Session = Depends(get_db)):
-
     try:
         db_account = crud.get_account(db, account_id)
     except:
-        raise HTTPException(status_code=400, detail='Invalid request')
+        raise_bad_request()
 
     if db_account is None:
-        raise HTTPException(status_code=404, detail='Account not found')
+        raise_not_found('Account not found')
+
     return db_account
 
 
 @router.get('/', response_model=list[schemas.Account])
 def read_accounts(db: Session = Depends(get_db)):
-
     accounts = crud.get_accounts(db)
     return accounts
 
 
 @router.post('/', response_model=schemas.Account)
 def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)):
-
     if not check(account.email):
-        raise HTTPException(status_code=400, detail="Invalid email")
+        raise_bad_request('Invalid email')
 
     db_account = crud.get_account_by_email(db, account.email)
     if db_account:
-        raise HTTPException(status_code=400, detail='Email already used')
+        raise_bad_request('Email already used')
 
     result = crud.create_account(db, account)
     producer.publish('create_account', result.id)

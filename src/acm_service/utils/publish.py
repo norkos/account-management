@@ -2,8 +2,6 @@ import pika
 from .env import CLOUDAMQP_URL
 import json
 
-params = pika.URLParameters(CLOUDAMQP_URL)
-
 
 class RabbitPublisher:
 
@@ -13,6 +11,7 @@ class RabbitPublisher:
 
     def publish(self, method, body) -> None:
         if self.connection is None:
+            params = pika.URLParameters(CLOUDAMQP_URL)
             self.connection = pika.BlockingConnection(params)
 
         if self.channel is None:
@@ -21,8 +20,7 @@ class RabbitPublisher:
 
         properties = pika.BasicProperties(method)
         self.channel.basic_publish(exchange='', routing_key='main', body=json.dumps(body), properties=properties)
-        print('Publishing event')
-        print(json.dumps(body))
+        print('Publishing event :' + json.dumps(body))
 
     def __del__(self) -> None:
         if self.connection:

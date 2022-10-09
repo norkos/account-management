@@ -104,7 +104,7 @@ def test_read_account_bad_id():
         headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid request"}
+    assert response.json() == {"detail": "Bad Request"}
 
 
 def test_read_account_not_found():
