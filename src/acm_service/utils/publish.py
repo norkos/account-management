@@ -1,9 +1,8 @@
 import pika
-import os
+from .env import CLOUDAMQP_URL
 import json
 
-url = os.environ.get('CLOUDAMQP_URL')
-params = pika.URLParameters(url)
+params = pika.URLParameters(CLOUDAMQP_URL)
 
 
 class RabbitPublisher:

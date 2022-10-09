@@ -1,18 +1,16 @@
+import uuid
+import mock
+from unittest.mock import ANY
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from sql_app.database import Base
+from main import app
 
-from main import app, get_db
-import publish
-
-import uuid
-
-from env import API_TOKEN
-import mock
-
-from unittest.mock import ANY
+from acm_service.sql_app.database import Base
+from acm_service.routers.accounts import get_db
+from acm_service.utils.publish import RabbitPublisher
+from acm_service.utils.env import API_TOKEN
 
 
 # stub the DB
@@ -44,7 +42,7 @@ def test_read_main():
     assert response.json() == {'msg': 'Hello my friend !'}
 
 
-@mock.patch.object(publish.RabbitPublisher, 'publish', autospec=True)
+@mock.patch.object(RabbitPublisher, 'publish', autospec=True)
 def test_create_account(mock_publish):
     response = client.post(
         '/accounts/',
@@ -118,7 +116,7 @@ def test_read_account_not_found():
     assert response.json() == {"detail": "Account not found"}
 
 
-@mock.patch.object(publish.RabbitPublisher, 'publish', autospec=True)
+@mock.patch.object(RabbitPublisher, 'publish', autospec=True)
 def test_read_accounts(mock_publish):
     client.post(
         '/accounts/',
