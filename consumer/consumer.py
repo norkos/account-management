@@ -1,6 +1,7 @@
 import json
 import pika
 import os
+import time
 
 
 def main():
@@ -13,8 +14,12 @@ def main():
         print('Received in main')
         data = json.loads(body)
         print(data)
+        time.sleep(20)
+        print('Done')
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    channel.basic_consume(queue='main', on_message_callback=callback, auto_ack=True)
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue='main', on_message_callback=callback)
     print('Started consuming')
 
     channel.start_consuming()

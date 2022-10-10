@@ -18,8 +18,10 @@ class RabbitPublisher:
             self.channel = self.connection.channel()
             self.channel.queue_declare(queue='main', durable=True)
 
-        properties = pika.BasicProperties(method)
-        self.channel.basic_publish(exchange='', routing_key='main', body=json.dumps(body), properties=properties)
+        self.channel.basic_publish(exchange='', routing_key='main', body=json.dumps(body),
+                                   properties=pika.BasicProperties(
+                                       delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE,
+                                       content_type=method))
         print('Publishing event :' + json.dumps(body))
 
     def __del__(self) -> None:
