@@ -7,4 +7,4 @@ COPY . /app
 
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-CMD python consumer.py
+CMD python main.py

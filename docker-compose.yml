@@ -27,9 +27,14 @@ services:
       - network
 
   consumer:
-    build: consumer
+    build:
+      context: consumer
+      dockerfile: Dockerfile
     environment:
+      PORT: 70
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+    ports:
+      - 8080:70 #localhost:Dockerfile
     networks:
       - network
 
