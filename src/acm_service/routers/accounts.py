@@ -1,5 +1,5 @@
 from fastapi import Depends, Header
-from fastapi import APIRouter
+from fastapi import APIRouter, status, Response
 
 from acm_service.sql_app import schemas
 from acm_service.utils.env import API_TOKEN
@@ -37,6 +37,19 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
 @router.get('/', response_model=list[schemas.Account])
 async def read_accounts(database: AccountDAL = Depends(get_db)):
     return await database.get_all()
+
+
+@router.delete('/', status_code=status.HTTP_202_ACCEPTED)
+async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)):
+    if await database.get(account_id) is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    await database.delete(account_id)
+
+
+@router.put('/', response_model=schemas.Account)
+async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
+    account = await database.update(account_id, **account.dict())
+    return account
 
 
 @router.post('/', response_model=schemas.Account)
