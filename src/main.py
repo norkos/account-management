@@ -27,7 +27,7 @@ async def add_process_time_header(request: fastapi.Request, call_next) -> fastap
 
 
 @app.get("/")
-def root():
+async def root():
     return {'msg': 'Hello my friend !'}
 
 

@@ -34,7 +34,7 @@ router = APIRouter(
 
 
 @router.get('/{account_id}', response_model=schemas.Account)
-def read_account(account_id: int, db: Session = Depends(get_db)):
+async def read_account(account_id: int, db: Session = Depends(get_db)):
     try:
         db_account = crud.get_account(db, account_id)
     except:
@@ -47,13 +47,13 @@ def read_account(account_id: int, db: Session = Depends(get_db)):
 
 
 @router.get('/', response_model=list[schemas.Account])
-def read_accounts(db: Session = Depends(get_db)):
+async def read_accounts(db: Session = Depends(get_db)):
     accounts = crud.get_accounts(db)
     return accounts
 
 
 @router.post('/', response_model=schemas.Account)
-def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)):
+async def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)):
     if not check(account.email):
         raise_bad_request('Invalid email')
 
