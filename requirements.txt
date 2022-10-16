@@ -1,5 +1,5 @@
 SQLAlchemy~=1.4.11
-fastapi~=0.85.0
+fastapi~=0.85.1
 pydantic~=1.10.2
 requests~=2.28.1
 pytest~=7.1.3

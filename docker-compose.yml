@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 80
-      NORKOS-AUTH-TOKEN: local-one-will-be-overwritten
+      NORKOS-AUTH-TOKEN: local
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     ports:
       - 8000:80 #localhost:Dockerfile

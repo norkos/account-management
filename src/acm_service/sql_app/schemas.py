@@ -11,7 +11,7 @@ class AccountCreate(AccountBase):
 
 
 class Account(AccountBase):
-    id: int
+    id: str
 
     class Config:
         orm_mode = True
