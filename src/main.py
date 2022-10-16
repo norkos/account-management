@@ -3,8 +3,7 @@ import fastapi
 from fastapi import FastAPI
 import uvicorn
 
-from acm_service.sql_app import models
-from acm_service.sql_app.database import engine
+from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 
@@ -14,7 +13,13 @@ app = FastAPI(
     docs_url='/_swagger',
 )
 app.include_router(accounts.router)
-models.Base.metadata.create_all(bind=engine)
+
+
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as connection:
+        #await connection.run_sync(Base.metadata.drop_all)
+        await connection.run_sync(Base.metadata.create_all)
 
 
 @app.middleware("http")

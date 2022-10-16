@@ -4,12 +4,7 @@ from .database import Base
 from sqlalchemy.orm import Session
 
 
-class Account(Base):
-    __tablename__ = 'accounts'
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    email = Column(String, unique=True, index=True)
-    name = Column(String, index=False)
+class AccountDAL():
 
     @classmethod
     async def create(cls, db_session: Session, **kwargs):
@@ -41,13 +36,6 @@ class Account(Base):
     @classmethod
     async def get(cls, db_session: Session, id: int):
         query = sqlalchemy.select(cls).where(cls.id == id)
-        accounts = await db_session.execute(query)
-        (account, ) = accounts.first()
-        return account
-
-    @classmethod
-    async def get_account_by_email(cls, db_session: Session, email: str):
-        query = sqlalchemy.select(cls).where(cls.email == email)
         accounts = await db_session.execute(query)
         (account, ) = accounts.first()
         return account
