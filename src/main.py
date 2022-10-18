@@ -18,7 +18,7 @@ app.include_router(accounts.router)
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+        #await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
 
 

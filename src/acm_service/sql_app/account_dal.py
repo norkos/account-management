@@ -38,4 +38,5 @@ class AccountDAL:
         query = update(Account).where(Account.id == uuid).values(**kwargs).\
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
-        await self._session.commit()
+        await self._session.flush()
+        return await self.get(uuid)

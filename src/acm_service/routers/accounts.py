@@ -48,6 +48,9 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)
 
 @router.put('/', response_model=schemas.Account)
 async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
+    if not check(account.email):
+        raise_bad_request('Invalid e-mail')
+
     account = await database.update(account_id, **account.dict())
     return account
 
