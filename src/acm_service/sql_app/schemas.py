@@ -10,8 +10,8 @@ class AccountCreate(AccountBase):
     pass
 
 
-class Account(AccountBase):
-    id: str
-
-    class Config:
-        orm_mode = True
+#class Account(AccountBase):
+#    id: str
+#
+#    class Config:
+#        orm_mode = True

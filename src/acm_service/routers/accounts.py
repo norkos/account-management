@@ -24,7 +24,8 @@ router = APIRouter(
 )
 
 
-@router.get('/{account_id}', response_model=schemas.Account)
+# TODO: pydantic
+@router.get('/{account_id}')
 async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     db_account = await database.get(account_id)
 
@@ -34,7 +35,8 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     return db_account
 
 
-@router.get('/', response_model=list[schemas.Account])
+# TODO: pydantic
+@router.get('/')
 async def read_accounts(database: AccountDAL = Depends(get_db)):
     return await database.get_all()
 
@@ -46,7 +48,8 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)
     await database.delete(account_id)
 
 
-@router.put('/', response_model=schemas.Account)
+# TODO: pydantic
+@router.put('/')
 async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
@@ -55,16 +58,15 @@ async def update_account(account_id: str, account: schemas.AccountCreate, databa
     return account
 
 
-@router.post('/', response_model=schemas.Account)
+@router.post('/')
 async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
 
-    db_account = await database.get_account_by_email(account.email)
-    if db_account:
+    if await database.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 
     result = await database.create(name=account.name, email=account.email)
-    #producer.publish('create_account', result.id)
+    # producer.publish('create_account', result.id)
 
     return result
