@@ -40,3 +40,7 @@ class AccountDAL:
         await self._session.execute(query)
         await self._session.flush()
         return await self.get(uuid)
+
+    async def close(self):
+        if self._session and self._session.is_active:
+            await self._session.close()
