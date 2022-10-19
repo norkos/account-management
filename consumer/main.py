@@ -13,7 +13,7 @@ def callback(ch, method, properties, body):
     print('Received in main')
     data = json.loads(body)
     print(data)
-    time.sleep(20)
+    time.sleep(1)
     print('Done')
     ch.basic_ack(delivery_tag=method.delivery_tag)
 

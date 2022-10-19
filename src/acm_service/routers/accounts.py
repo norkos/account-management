@@ -4,12 +4,10 @@ from fastapi import APIRouter, status, Response
 from acm_service.sql_app import schemas
 from acm_service.utils.env import API_TOKEN
 from acm_service.utils.email_checker import check
-from acm_service.utils.publish import RabbitPublisher
+from acm_service.utils.publish import RabbitProducer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_db
+from acm_service.dependencies import get_db, get_rabbit_producer
 from acm_service.sql_app.account_dal import AccountDAL
-
-producer = RabbitPublisher()
 
 
 async def get_token_header(x_token: str = Header()):
@@ -59,7 +57,8 @@ async def update_account(account_id: str, account: schemas.AccountCreate, databa
 
 
 @router.post('/')
-async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
+async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db),
+                         rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
 
@@ -67,6 +66,6 @@ async def create_account(account: schemas.AccountCreate, database: AccountDAL = 
         raise_bad_request('E-mail already used')
 
     result = await database.create(name=account.name, email=account.email)
-    # producer.publish('create_account', result.id)
+    await rabbit_producer.async_publish('create_account', result.id)
 
     return result

@@ -1,29 +1,19 @@
-import pika
-from .env import CLOUDAMQP_URL
 import json
+import aio_pika
 
 
-class RabbitPublisher:
+class RabbitProducer:
 
-    def __init__(self) -> None:
-        self.connection = None
-        self.channel = None
+    def __init__(self, url: str):
+        self._url = url
 
-    def publish(self, method, body) -> None:
-        if self.connection is None:
-            params = pika.URLParameters(CLOUDAMQP_URL)
-            self.connection = pika.BlockingConnection(params)
-
-        if self.channel is None:
-            self.channel = self.connection.channel()
-            self.channel.queue_declare(queue='main', durable=True)
-
-        self.channel.basic_publish(exchange='', routing_key='main', body=json.dumps(body),
-                                   properties=pika.BasicProperties(
-                                       delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE,
-                                       content_type=method))
-        print('Publishing event :' + json.dumps(body))
-
-    def __del__(self) -> None:
-        if self.connection:
-            self.connection.close()
+    async def async_publish(self, method, body) -> None:
+        connection = await aio_pika.connect_robust(self._url)
+        async with connection:
+            channel = await connection.channel()
+            await channel.default_exchange.publish(
+                aio_pika.Message(
+                    body=json.dumps(body).encode()
+                ),
+                routing_key='main'
+            )

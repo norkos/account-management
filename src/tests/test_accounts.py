@@ -1,17 +1,22 @@
 from uuid import uuid4
 from typing import List
 
+import mock
+from unittest.mock import ANY
+
 import pytest
 from fastapi.testclient import TestClient
 from requests import Response
 
 from main import app
 
-from acm_service.routers.accounts import get_db
+from acm_service.routers.accounts import get_db, get_rabbit_producer
 from acm_service.utils.env import API_TOKEN
 from acm_service.sql_app.account_dal import AccountDAL
 from sqlalchemy.orm import Session
 from acm_service.sql_app.models import Account
+
+from acm_service.utils.publish import RabbitProducer
 
 
 class LocalDB:
@@ -80,7 +85,21 @@ def override_get_db():
     return AccountDALStub(localDb)
 
 
+class RabbitProducerStub(RabbitProducer):
+
+    def __init__(self):
+        super().__init__('')
+
+    async def async_publish(self, method, body) -> None:
+        pass
+
+
+def override_get_rabbit_producer():
+    return RabbitProducerStub()
+
+
 app.dependency_overrides[get_db] = override_get_db
+app.dependency_overrides[get_rabbit_producer] = override_get_rabbit_producer
 
 
 @pytest.fixture(autouse=True)
@@ -96,11 +115,14 @@ def create_account(name: str, email: str) -> Response:
     )
 
 
-def test_create_account():
+@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
+def test_create_account(mock_async_publish):
     name = 'my_name'
     mail = 'test@mail.com'
 
     response = create_account(name, mail)
+    mock_async_publish.assert_called_once_with(ANY, method="create_account", body=response.json()['id'])
+
     assert response.status_code == 200
     assert response.json()['name'] == name
     assert response.json()['email'] == mail

@@ -5,15 +5,6 @@ from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 
-from timing_asgi import TimingMiddleware, TimingClient
-from timing_asgi.integrations import StarletteScopeToName
-
-
-class PrintTimings(TimingClient):
-    def timing(self, metric_name, timing, tags):
-        print(metric_name, timing, tags)
-
-
 app = FastAPI(
     title='account-management',
     version='0.1',
@@ -21,18 +12,13 @@ app = FastAPI(
 )
 app.include_router(accounts.router)
 
-app.add_middleware(
-    TimingMiddleware,
-    client=PrintTimings(),
-    metric_namer=StarletteScopeToName(prefix="myapp", starlette_app=app)
-)
-
 
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-
+        #loop = asyncio.get_event_loop()
+        #loop.create_task(my_rabbit_consumer_app())
 
 @app.get("/")
 async def root():

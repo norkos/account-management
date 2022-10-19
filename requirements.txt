@@ -9,3 +9,4 @@ mock~=4.0.3
 aiosqlite~=0.17.0
 asyncio~=3.4.3
 timing-asgi~=0.2.1
+aio-pika~=8.2.4
