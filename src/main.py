@@ -1,5 +1,3 @@
-import time
-import fastapi
 from fastapi import FastAPI
 import uvicorn
 
@@ -29,19 +27,11 @@ app.add_middleware(
     metric_namer=StarletteScopeToName(prefix="myapp", starlette_app=app)
 )
 
+
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-
-
-#@app.middleware("http")
-async def add_process_time_header(request: fastapi.Request, call_next) -> fastapi.Response:
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
 
 
 @app.get("/")
