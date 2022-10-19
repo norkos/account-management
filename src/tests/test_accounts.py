@@ -1,6 +1,9 @@
 from uuid import uuid4
-from typing import TypedDict, List
+from typing import List
+
+import pytest
 from fastapi.testclient import TestClient
+from requests import Response
 
 from main import app
 
@@ -11,16 +14,32 @@ from sqlalchemy.orm import Session
 from acm_service.sql_app.models import Account
 
 
-class SessionStub(Session):
-    pass
+class LocalDB:
+    def __init__(self):
+        self._accounts_by_uuid = {}
+        self._accounts_by_mail = {}
+
+    @property
+    def accounts_by_uuid(self):
+        return self._accounts_by_uuid
+
+    @property
+    def accounts_by_mail(self):
+        return self._accounts_by_mail
+
+    def reset(self):
+        self._accounts_by_uuid = {}
+        self._accounts_by_mail = {}
 
 
 class AccountDALStub(AccountDAL):
+    class SessionStub(Session):
+        pass
 
-    def __init__(self):
-        super().__init__(SessionStub())
-        self._accounts_by_uuid = {}
-        self._accounts_by_mail = {}
+    def __init__(self, local_db: LocalDB):
+        super().__init__(self.SessionStub())
+        self._accounts_by_uuid = local_db.accounts_by_uuid
+        self._accounts_by_mail = local_db.accounts_by_mail
 
     async def create(self, **kwargs) -> Account:
         new_account = Account(id=str(uuid4()), **kwargs)
@@ -53,33 +72,51 @@ class AccountDALStub(AccountDAL):
         return new_account
 
 
+client = TestClient(app)
+localDb = LocalDB()
+
+
 def override_get_db():
-    return AccountDALStub()
+    return AccountDALStub(localDb)
 
 
 app.dependency_overrides[get_db] = override_get_db
 
-client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def run_before_and_after_tests(tmpdir):
+    localDb.reset()
+
+
+def create_account(name: str, email: str) -> Response:
+    return client.post(
+        '/accounts/',
+        headers={"X-Token": API_TOKEN},
+        json={'name': name, 'email': email}
+    )
 
 
 def test_create_account():
-    response = client.post(
-        '/accounts/',
-        headers={"X-Token": API_TOKEN},
-        json={'name': 'my_name', 'email': 'test@mail.com'}
-    )
+    name = 'my_name'
+    mail = 'test@mail.com'
 
+    response = create_account(name, mail)
     assert response.status_code == 200
-    assert response.json()['name'] == 'my_name'
-    assert response.json()['email'] == 'test@mail.com'
+    assert response.json()['name'] == name
+    assert response.json()['email'] == mail
 
 
-def test_create_account_wrong_mail():
-    response = client.post(
-        '/accounts/',
-        headers={"X-Token": API_TOKEN},
-        json={'name': 'my_name', 'email': 'test@mail.com;)'}
-    )
+def test_create_account_duplicated_mail():
+    create_account('my_name', 'my_mail@mail.com')
+    response = create_account('my_name2', 'my_mail@mail.com')
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "E-mail already used"}
+
+
+def test_create_account_invalid_mail():
+    response = create_account('my_name2', 'my_mailmail.com')
+
     assert response.status_code == 400
     assert response.json() == {"detail": "Invalid e-mail"}
 
@@ -95,34 +132,34 @@ def test_create_accounts_bad_token():
 
 
 def test_read_account():
-    response = client.get(
-        '/accounts/1',
+    name = 'my_name'
+    mail = 'test@mail.com'
+    create_response = create_account(name , mail)
+
+    read_response = client.get(
+        f'/accounts/{create_response.json()["id"]}',
         headers={"X-Token": API_TOKEN}
     )
-    assert response.status_code == 200
-    assert response.json() == {
-        'id': 1,
-        'name': 'my_name',
-        'email': 'test@mail.com',
+    assert read_response.status_code == 200
+    assert read_response.json() == {
+        'id': create_response.json()['id'],
+        'name':  name,
+        'email': mail,
     }
 
 
 def test_read_account_bad_token():
-    response = client.get(
-        '/accounts/1',
-        headers={"X-Token": "wrong one"}
-    )
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid X-Token header"}
+    name = 'my_name'
+    mail = 'test@mail.com'
+    create_response = create_account(name, mail)
 
-
-def test_read_account_bad_id():
-    response = client.get(
-        '/accounts/1111111111111111111111111111111111111111111111111111111111111',
-        headers={"X-Token": API_TOKEN}
+    read_response = client.get(
+        f'/accounts/{create_response.json()["id"]}',
+        headers={"X-Token": 'wrong one'}
     )
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Bad Request"}
+
+    assert read_response.status_code == 400
+    assert read_response.json() == {"detail": "Invalid X-Token header"}
 
 
 def test_read_account_not_found():
@@ -135,24 +172,17 @@ def test_read_account_not_found():
 
 
 def test_read_accounts():
-    client.post(
-        '/accounts/',
-        headers={"X-Token": API_TOKEN},
-        json={'name': 'my_name', 'email': 'test2@mail.com'}
-    )
-
-    client.post(
-        '/accounts/',
-        headers={"X-Token": API_TOKEN},
-        json={'name': 'my_name', 'email': 'test3@mail.com'}
-    )
+    how_many = 20
+    for x in range(how_many):
+        create_account('my_name', f'test{x}@mail.com')
 
     response = client.get(
         '/accounts/',
         headers={"X-Token": API_TOKEN}
     )
+
     assert response.status_code == 200
-    assert len(response.json()) >= 3
+    assert len(response.json()) == how_many
 
 
 def test_read_accounts_bad_token():
