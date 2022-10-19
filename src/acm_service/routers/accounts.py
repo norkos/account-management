@@ -1,24 +1,15 @@
 from fastapi import Depends, Header
-from fastapi import APIRouter
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, status, Response
 
-from acm_service.sql_app import crud
 from acm_service.sql_app import schemas
-from acm_service.sql_app.database import SessionLocal
 from acm_service.utils.env import API_TOKEN
 from acm_service.utils.email_checker import check
 from acm_service.utils.publish import RabbitPublisher
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
+from acm_service.dependencies import get_db
+from acm_service.sql_app.account_dal import AccountDAL
 
 producer = RabbitPublisher()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 async def get_token_header(x_token: str = Header()):
@@ -33,12 +24,10 @@ router = APIRouter(
 )
 
 
-@router.get('/{account_id}', response_model=schemas.Account)
-def read_account(account_id: int, db: Session = Depends(get_db)):
-    try:
-        db_account = crud.get_account(db, account_id)
-    except:
-        raise_bad_request()
+# TODO: pydantic
+@router.get('/{account_id}')
+async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
+    db_account = await database.get(account_id)
 
     if db_account is None:
         raise_not_found('Account not found')
@@ -46,22 +35,38 @@ def read_account(account_id: int, db: Session = Depends(get_db)):
     return db_account
 
 
-@router.get('/', response_model=list[schemas.Account])
-def read_accounts(db: Session = Depends(get_db)):
-    accounts = crud.get_accounts(db)
-    return accounts
+# TODO: pydantic
+@router.get('/')
+async def read_accounts(database: AccountDAL = Depends(get_db)):
+    return await database.get_all()
 
 
-@router.post('/', response_model=schemas.Account)
-def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)):
+@router.delete('/', status_code=status.HTTP_202_ACCEPTED)
+async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)):
+    if await database.get(account_id) is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    await database.delete(account_id)
+
+
+# TODO: pydantic
+@router.put('/')
+async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
     if not check(account.email):
-        raise_bad_request('Invalid email')
+        raise_bad_request('Invalid e-mail')
 
-    db_account = crud.get_account_by_email(db, account.email)
-    if db_account:
-        raise_bad_request('Email already used')
+    account = await database.update(account_id, **account.dict())
+    return account
 
-    result = crud.create_account(db, account)
-    producer.publish('create_account', result.id)
+
+@router.post('/')
+async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
+    if not check(account.email):
+        raise_bad_request('Invalid e-mail')
+
+    if await database.get_account_by_email(account.email):
+        raise_bad_request('E-mail already used')
+
+    result = await database.create(name=account.name, email=account.email)
+    # producer.publish('create_account', result.id)
 
     return result

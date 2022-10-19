@@ -3,13 +3,6 @@ import pika
 import os
 import time
 
-from fastapi import FastAPI
-
-
-app = FastAPI()
-messages = []
-PORT = os.environ.get('PORT')
-
 params = pika.URLParameters(os.getenv('CLOUDAMQP_URL'))
 connection = pika.BlockingConnection(params)
 channel = connection.channel()
