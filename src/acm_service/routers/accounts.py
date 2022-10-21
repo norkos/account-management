@@ -62,7 +62,6 @@ async def create_account(account: schemas.AccountCreate, database: AccountDAL = 
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
 
-    print(f'Checking the mail {account.email}')
     if await database.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 

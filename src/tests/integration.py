@@ -1,7 +1,12 @@
+from uuid import uuid4
+
 import aiohttp
 import asyncio
 import platform
 import json
+
+import pytest
+
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -59,14 +64,52 @@ async def delete_account(uuid: str) -> None:
 
 
 async def delete_accounts(accounts: {}) -> None:
+    if len(accounts) == 0:
+        return None
+
     tasks = []
     for account in accounts:
         tasks.append(asyncio.create_task(delete_account(account['id'])))
     await asyncio.wait(tasks)
 
 
-if __name__ == "__main__":
-    asyncio.run(deleted_accounts())
-    asyncio.run(create_account('jan', '121ka@wp.pl'))
-    asyncio.run(delete_account('a0ad7f0f-922f-490e-9315-eb1fbeb03adb'))
-    print(asyncio.run(get_account('a0ad7f0f-922f-490e-9315-eb1fbeb03adb')))
+@pytest.mark.asyncio
+async def test_flow_of_the_account():
+    name = str(uuid4())
+    email = f'{name}@gmail.com'
+
+    uuid = await create_account(name, email)
+    await asyncio.sleep(0.1)
+    account = await get_account(uuid)
+
+    assert account['name'] == name
+    assert account['email'] == email
+    await asyncio.sleep(0.1)
+
+    await delete_account(account['id'])
+    account = await get_account(account['id'])
+
+    assert account['detail'] == 'Account not found'
+
+
+@pytest.mark.asyncio
+async def test_remove_all_accounts():
+    accounts = await get_accounts()
+    await delete_accounts(accounts)
+    accounts = await get_accounts()
+    assert len(accounts) == 0
+
+
+@pytest.mark.asyncio
+async def test_create_several_accounts():
+    how_many = 100
+    tasks = []
+    for x in range(0, how_many):
+        name = f'user_name_{x}'
+        email = f'test_{x}@google.com'
+        tasks.append(create_account(name, email))
+
+    result = await asyncio.gather(*tasks)
+
+    assert len(result) == how_many
+
