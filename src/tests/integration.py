@@ -10,9 +10,9 @@ import pytest
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-
 TOKEN = 'local'
 URL = 'http://localhost:8080'
+
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
 
@@ -54,7 +54,7 @@ async def delete_account(uuid: str) -> None:
     async with aiohttp.ClientSession(headers=
                                      {'x-token': TOKEN,
                                       'accept': 'application/json',
-                                      },) as session:
+                                      }, ) as session:
         result = await session.delete(f'{URL}/accounts/{uuid}')
 
         if result.status.real in HTTP_RESPONSE_ACCEPT:
@@ -73,8 +73,7 @@ async def delete_accounts(accounts: {}) -> None:
     await asyncio.wait(tasks)
 
 
-@pytest.mark.asyncio
-async def test_flow_of_the_account():
+async def flow_of_the_account():
     name = str(uuid4())
     email = f'{name}@gmail.com'
 
@@ -93,6 +92,24 @@ async def test_flow_of_the_account():
 
 
 @pytest.mark.asyncio
+async def test_traffic_model():
+    tasks_amount = 10
+    tasks = []
+
+    for x in range(0, tasks_amount):
+        tasks.append(asyncio.create_task(flow_of_the_account()))
+
+    await asyncio.gather(*tasks)
+    accounts = await get_accounts()
+    assert len(accounts) == 0
+
+
+@pytest.mark.asyncio
+async def test_flow_of_the_account():
+    await flow_of_the_account()
+
+
+@pytest.mark.asyncio
 async def test_remove_all_accounts():
     accounts = await get_accounts()
     await delete_accounts(accounts)
@@ -107,9 +124,8 @@ async def test_create_several_accounts():
     for x in range(0, how_many):
         name = f'user_name_{x}'
         email = f'test_{x}@google.com'
-        tasks.append(create_account(name, email))
+        tasks.append(asyncio.create_task(create_account(name, email)))
 
     result = await asyncio.gather(*tasks)
 
     assert len(result) == how_many
-
