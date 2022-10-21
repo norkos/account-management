@@ -39,7 +39,7 @@ async def read_accounts(database: AccountDAL = Depends(get_db)):
     return await database.get_all()
 
 
-@router.delete('/', status_code=status.HTTP_202_ACCEPTED)
+@router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)):
     if await database.get(account_id) is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -62,10 +62,10 @@ async def create_account(account: schemas.AccountCreate, database: AccountDAL = 
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
 
+    print(f'Checking the mail {account.email}')
     if await database.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 
     result = await database.create(name=account.name, email=account.email)
     await rabbit_producer.async_publish('create_account', result.id)
-
     return result
