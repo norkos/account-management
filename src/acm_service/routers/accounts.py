@@ -41,8 +41,8 @@ async def read_accounts(database: AccountDAL = Depends(get_db)):
 
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)):
-    if await database.get(account_id) is None:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    #if await database.get(account_id) is None:
+    #    return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(account_id)
 
 
