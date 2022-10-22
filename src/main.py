@@ -5,7 +5,7 @@ from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-from acm_service.utils.env import CLOUDAMQP_URL
+from acm_service.utils.env import ENABLE_EVENTS
 
 app = FastAPI(
     title='account-management',
@@ -14,9 +14,10 @@ app = FastAPI(
 )
 app.include_router(accounts.router)
 
-if CLOUDAMQP_URL == '':
+if ENABLE_EVENTS == 'False':
     app.dependency_overrides[get_rabbit_producer] = get_local_rabbit_producer
-    print('RabbitMQ will be stubbed so that you can run service locally without Docker')
+    print('Dispatching events was temporary disabled, '
+          'so that we won do not worry about RabbitMQ message limits in our PaaS provider')
 
 
 @app.on_event("startup")
