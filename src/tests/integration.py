@@ -78,22 +78,22 @@ async def flow_of_the_account():
     email = f'{name}@gmail.com'
 
     uuid = await create_account(name, email)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
     account = await get_account(uuid)
 
     assert account['name'] == name
     assert account['email'] == email
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
 
     await delete_account(account['id'])
     account = await get_account(account['id'])
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
     assert account['detail'] == 'Account not found'
 
 
 async def traffic_model():
-    tasks_amount = 10
+    tasks_amount = 100
     tasks = []
 
     for x in range(0, tasks_amount):
@@ -128,3 +128,4 @@ async def create_several_accounts():
 if __name__ == "__main__":
     asyncio.run(create_several_accounts())
     asyncio.run(remove_all_accounts())
+    asyncio.run(traffic_model())
