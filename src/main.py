@@ -6,7 +6,6 @@ from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
 
-
 app = FastAPI(
     title='account-management',
     version='0.1',
@@ -22,9 +21,16 @@ async def startup():
         await connection.run_sync(Base.metadata.create_all)
 
 
+# https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html?highlight=create_async_engine
+@app.on_event("shutdown")
+async def shutdown():
+    await engine.dispose()
+
+
 @app.get("/")
 async def root():
     return {'msg': 'Hello my friend !'}
+
 
 
 if __name__ == "__main__":

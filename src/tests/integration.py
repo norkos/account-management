@@ -10,7 +10,7 @@ if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 TOKEN = 'local'
-URL = 'http://localhost:8000'
+URL = 'http://localhost:8080'
 
 HTTP_RESPONSE_ACCEPT = {200, 202}
 

@@ -20,7 +20,7 @@ services:
       NORKOS-AUTH-TOKEN: local
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     ports:
-      - 8000:80 #localhost:Dockerfile
+      - 8080:80 #localhost:Dockerfile
     volumes:
       - .:/app
     networks:
@@ -34,9 +34,26 @@ services:
       PORT: 70
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     ports:
-      - 8080:70 #localhost:Dockerfile
+      - 8090:70 #localhost:Dockerfile
+    networks:
+      - network
+
+  db:
+    image: postgres:14.5-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres_user
+      - POSTGRES_PASSWORD=postgres_pass
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
     networks:
       - network
 
 networks:
   network: {}
+
+volumes:
+  db:
+    driver: local
