@@ -6,8 +6,8 @@ For Heroku please follow https://devcenter.heroku.com/articles/container-registr
     heroku login
     heroku container:login
     heroku create
-    heroku container:push web -a secure-spire-80562
-    heroku container:release web -a secure-spire-80562
+    heroku container:push web
+    heroku container:release web
     heroku open
 
 Have fun ;)
