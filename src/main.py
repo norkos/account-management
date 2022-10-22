@@ -5,7 +5,7 @@ from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-
+from acm_service.utils.env import ENABLE_EVENTS
 
 app = FastAPI(
     title='account-management',
@@ -13,13 +13,23 @@ app = FastAPI(
     docs_url='/_swagger'
 )
 app.include_router(accounts.router)
-app.dependency_overrides[get_rabbit_producer] = get_local_rabbit_producer
+
+if ENABLE_EVENTS == 'False':
+    app.dependency_overrides[get_rabbit_producer] = get_local_rabbit_producer
+    print('Dispatching events was temporary disabled, '
+          'so that we won do not worry about RabbitMQ message limits in our PaaS provider')
 
 
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+
+
+# https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html?highlight=create_async_engine
+@app.on_event("shutdown")
+async def shutdown():
+    await engine.dispose()
 
 
 @app.get("/")

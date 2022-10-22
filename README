@@ -5,7 +5,7 @@ for pytest please run 'pytest'
 For Heroku please follow https://devcenter.heroku.com/articles/container-registry-and-runtime:
     heroku login
     heroku container:login
-    heroku create
+    #heroku create
     heroku container:push web -a secure-spire-80562
     heroku container:release web -a secure-spire-80562
     heroku open
