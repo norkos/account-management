@@ -11,9 +11,9 @@ if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-TOKEN = os.environ.get('TOKEN', 'local')
-URL = os.environ.get('URL', 'http://localhost:8080')
 
+TOKEN = 'L2jzA#^Z0^t7#w3dL&s%'
+URL = 'https://secure-spire-80562.herokuapp.com'
 
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
