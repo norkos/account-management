@@ -4,13 +4,16 @@ import aiohttp
 import asyncio
 import platform
 import json
+import os
 
 
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-TOKEN = 'local'
-URL = 'http://localhost:8080'
+
+TOKEN = os.environ.get('TOKEN', 'local')
+URL = os.environ.get('URL', 'http://localhost:8080')
+
 
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
@@ -124,6 +127,6 @@ async def create_several_accounts():
 
 
 if __name__ == "__main__":
-    asyncio.run(create_several_accounts())
-    asyncio.run(remove_all_accounts())
-    asyncio.run(traffic_model(1))
+    #asyncio.run(create_several_accounts())
+    #asyncio.run(remove_all_accounts())
+    asyncio.run(traffic_model(10))
