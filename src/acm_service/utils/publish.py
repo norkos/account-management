@@ -1,5 +1,9 @@
 import json
 import aio_pika
+from acm_service.utils.logconf import DEFAULT_LOGGER
+
+import logging
+logger = logging.getLogger(DEFAULT_LOGGER)
 
 
 class RabbitProducer:
@@ -17,6 +21,7 @@ class RabbitProducer:
                 ),
                 routing_key='main'
             )
+            logger.info(f'Sending the event to queue: {body}')
 
 
 class LocalRabbitProducer(RabbitProducer):
@@ -25,4 +30,4 @@ class LocalRabbitProducer(RabbitProducer):
         super().__init__('')
 
     async def async_publish(self, method, body) -> None:
-        print(f'Sending the event to main: {body}')
+        logger.info(f'Sending the event to queue: {body}')
