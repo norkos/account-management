@@ -27,7 +27,6 @@ router = APIRouter(
 )
 
 
-# TODO: pydantic
 @router.get('/{account_id}', response_model=schemas.AccountInDB)
 async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     db_account = await database.get(account_id)
@@ -38,7 +37,6 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     return db_account
 
 
-# TODO: pydantic
 @router.get('', response_model=list[schemas.AccountInDB])
 async def read_accounts(database: AccountDAL = Depends(get_db)):
     return await database.get_all()
