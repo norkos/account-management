@@ -11,6 +11,7 @@ from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
+
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
@@ -27,7 +28,7 @@ router = APIRouter(
 
 
 # TODO: pydantic
-@router.get('/{account_id}')
+@router.get('/{account_id}', response_model=schemas.AccountInDB)
 async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     db_account = await database.get(account_id)
 
@@ -38,7 +39,7 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
 
 
 # TODO: pydantic
-@router.get('')
+@router.get('', response_model=list[schemas.AccountInDB])
 async def read_accounts(database: AccountDAL = Depends(get_db)):
     return await database.get_all()
 
@@ -50,8 +51,8 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)
     await database.delete(account_id)
     logger.info(f'Account {account_id} was deleted')
 
-# TODO: pydantic
-@router.put('')
+
+@router.put('', response_model=schemas.AccountInDB)
 async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
     if not check(account.email):
         raise_bad_request('Invalid e-mail')
@@ -60,7 +61,7 @@ async def update_account(account_id: str, account: schemas.AccountCreate, databa
     return account
 
 
-@router.post('')
+@router.post('', response_model=schemas.AccountInDB)
 async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     if not check(account.email):

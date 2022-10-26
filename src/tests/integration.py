@@ -4,14 +4,13 @@ import aiohttp
 import asyncio
 import platform
 import json
-import os
 
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-TOKEN = os.environ.get('TOKEN', 'local')
-URL = os.environ.get('URL', 'http://localhost:8080')
+TOKEN = 'local'
+URL = 'http://localhost:8080'
 
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
