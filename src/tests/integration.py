@@ -73,7 +73,7 @@ async def delete_accounts(accounts: {}) -> None:
     await asyncio.wait(tasks)
 
 
-async def flow_of_the_account():
+async def flow_of_the_account() -> None:
     name = str(uuid4())
     email = f'{name}@gmail.com'
 
@@ -92,7 +92,7 @@ async def flow_of_the_account():
     assert account['detail'] == 'Account not found'
 
 
-async def traffic_model(tasks_amount: int):
+async def traffic_model(tasks_amount: int) -> None:
     tasks = []
 
     for x in range(0, tasks_amount):
@@ -103,7 +103,7 @@ async def traffic_model(tasks_amount: int):
     assert len(accounts) == 0
 
 
-async def remove_all_accounts():
+async def remove_all_accounts() -> None:
     accounts = await get_accounts()
     print(f'Removing {len(accounts)} accounts.')
     await delete_accounts(accounts)
@@ -111,19 +111,19 @@ async def remove_all_accounts():
     assert len(accounts) == 0
 
 
-async def create_several_accounts():
-    how_many = 100
+async def create_several_accounts(how_many_accounts: int) -> None:
     tasks = []
-    for x in range(0, how_many):
+    for x in range(0, how_many_accounts):
         name = f'user_name_{x}'
         email = f'test_{x}@google.com'
         tasks.append(asyncio.create_task(create_account(name, email)))
 
     result = await asyncio.gather(*tasks)
-    assert len(result) == how_many
+    assert len(result) == how_many_accounts
 
 
 if __name__ == "__main__":
-    #asyncio.run(create_several_accounts())
-    #asyncio.run(remove_all_accounts())
-    asyncio.run(traffic_model(10))
+    how_many = 10
+    asyncio.run(create_several_accounts(how_many))
+    asyncio.run(remove_all_accounts())
+    asyncio.run(traffic_model(how_many))
