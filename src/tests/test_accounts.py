@@ -109,7 +109,7 @@ def run_before_and_after_tests(tmpdir):
 
 def create_account(name: str, email: str) -> Response:
     return client.post(
-        '/accounts/',
+        '/accounts',
         headers={"X-Token": API_TOKEN},
         json={'name': name, 'email': email}
     )
@@ -138,14 +138,12 @@ def test_create_account_duplicated_mail():
 
 def test_create_account_invalid_mail():
     response = create_account('my_name2', 'my_mailmail.com')
-
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid e-mail"}
+    assert response.status_code == 422
 
 
 def test_create_accounts_bad_token():
     response = client.post(
-        '/accounts/',
+        '/accounts',
         headers={"X-Token": "wrong one"},
         json={'name': 'my_name', 'email': 'test@mail.com'}
     )

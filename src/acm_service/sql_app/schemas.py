@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, UUID4
 
 
 class AccountBase(BaseModel):
-    name: str | None = None
-    email: str | None = None
+    name: str
+    email: EmailStr
 
 
 class AccountCreate(AccountBase):
@@ -11,7 +11,7 @@ class AccountCreate(AccountBase):
 
 
 class AccountInDB(AccountBase):
-    id: str
+    id: UUID4
 
     class Config:
         orm_mode = True
