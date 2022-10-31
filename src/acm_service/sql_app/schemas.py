@@ -15,4 +15,4 @@ class AccountInDB(AccountBase):
 
     class Config:
         orm_mode = True
-        allow_mutation = False #can't touch this, la la la
+        allow_mutation = False  # can't touch this, la la la
