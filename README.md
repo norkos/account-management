@@ -13,9 +13,9 @@ The goal of the project was to play with the Microservice architecture and impro
   - or run the project with PyCharm with `main.py`, 
   - or deploy container into Heroku
 - telemetry
-   - Papertrail
-   - Scout
-   - Liberato
+   - Papertrail ![Papertrail](doc/papertrail.JPG) 
+   - Scout ![Scout](doc/scout.JPG) 
+   - Liberato ![Liberato](doc/liberato.JPG) 
 
 ## What is still on the TODO list?
 - introduce alembic
