@@ -15,6 +15,7 @@ The goal of the project was to play with the Microservice architecture and impro
 - telemetry
    - Papertrail
    - Scout
+   - Liberato
 
 ## What is still on the TODO list?
 - introduce alembic

@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 80
-      NORKOS-AUTH-TOKEN: local
+      AUTH_TOKEN: local
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
       ENABLE_EVENTS : 'True'

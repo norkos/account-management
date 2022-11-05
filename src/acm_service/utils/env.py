@@ -1,6 +1,6 @@
 import os
 
-API_TOKEN = os.environ.get('NORKOS-AUTH-TOKEN', 'local')
+API_TOKEN = os.environ.get('AUTH_TOKEN', 'local')
 PORT = os.environ.get('PORT', '8080')
 CLOUDAMQP_URL = os.environ.get('CLOUDAMQP_URL', '')
 ENABLE_EVENTS = os.environ.get('ENABLE_EVENTS', 'False')

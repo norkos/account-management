@@ -5,7 +5,7 @@ from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY
+from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, API_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 
 from scout_apm.api import Config

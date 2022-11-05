@@ -130,11 +130,11 @@ async def create_several_accounts(how_many_accounts: int) -> None:
 
 
 def test_traffic_model():
-    how_many = 10
+    how_many = 5
     asyncio.run(traffic_model(how_many))
 
 
 def test_create_and_remove():
-    how_many = 10
+    how_many = 5
     asyncio.run(create_several_accounts(how_many))
     asyncio.run(remove_all_accounts())
