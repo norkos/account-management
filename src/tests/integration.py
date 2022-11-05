@@ -4,15 +4,20 @@ import aiohttp
 import asyncio
 import platform
 import json
-
+import random
+import os
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-TOKEN = 'local'
-URL = 'http://localhost:8080'
+TOKEN = os.environ.get('TOKEN', 'local')
+URL = os.environ.get('URL', 'http://localhost:8080')
 
 HTTP_RESPONSE_ACCEPT = {200, 202}
+
+
+def rand() -> int:
+    return random.randint(0, 10)
 
 
 async def get_account(uuid: str) -> {}:
@@ -77,18 +82,20 @@ async def flow_of_the_account() -> None:
     name = str(uuid4())
     email = f'{name}@gmail.com'
 
+    await asyncio.sleep(rand())
     uuid = await create_account(name, email)
-    await asyncio.sleep(0.1)
+
+    await asyncio.sleep(rand())
     account = await get_account(uuid)
 
     assert account['name'] == name
     assert account['email'] == email
-    await asyncio.sleep(0.1)
 
+    await asyncio.sleep(rand())
     await delete_account(account['id'])
-    account = await get_account(account['id'])
 
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(rand())
+    account = await get_account(account['id'])
     assert account['detail'] == 'Account not found'
 
 
@@ -122,8 +129,12 @@ async def create_several_accounts(how_many_accounts: int) -> None:
     assert len(result) == how_many_accounts
 
 
-if __name__ == "__main__":
+def test_traffic_model():
+    how_many = 10
+    asyncio.run(traffic_model(how_many))
+
+
+def test_create_and_remove():
     how_many = 10
     asyncio.run(create_several_accounts(how_many))
     asyncio.run(remove_all_accounts())
-    asyncio.run(traffic_model(how_many))

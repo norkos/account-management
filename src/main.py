@@ -5,8 +5,11 @@ from acm_service.sql_app.database import engine, Base
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-from acm_service.utils.env import ENABLE_EVENTS
+from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
+
+from scout_apm.api import Config
+from scout_apm.async_.starlette import ScoutMiddleware
 
 from logging.config import dictConfig
 import logging
@@ -15,12 +18,20 @@ import logging
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
 
+
 app = FastAPI(
     title='account-management',
     version='0.1',
     docs_url='/_swagger'
 )
 app.include_router(accounts.router)
+
+Config.set(
+    key=SCOUT_KEY,
+    name=app.title,
+    monitor=True,
+)
+app.add_middleware(ScoutMiddleware)
 
 
 @app.on_event("startup")

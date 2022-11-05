@@ -9,13 +9,15 @@ The goal of the project was to play with the Microservice architecture and impro
   - under `consumer` you might find async consumer 
 - pydantic and types
 - Docker, how to make a smart environment: 
-  - so you can have our own environment locally, 
-  - or run the project with PyCharm, 
-  - or deploy this to Heroku
+  - so you can have your own e2e environment locally, 
+  - or run the project with PyCharm with `main.py`, 
+  - or deploy container into Heroku
 - telemetry
    - Papertrail
+   - Scout
 
 ## What is still on the TODO list?
+- introduce alembic
 - introduce caching
 - play more with Heroku
   - extends telemetry with something like the Grafana dashboards (let's see what Heroku has)
