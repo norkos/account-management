@@ -8,5 +8,4 @@ COPY . /app
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
 WORKDIR /app/src
-
 CMD python main.py

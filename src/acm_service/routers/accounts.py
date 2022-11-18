@@ -10,6 +10,7 @@ from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
+import decorator
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 

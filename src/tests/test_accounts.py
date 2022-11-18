@@ -2,9 +2,13 @@ from uuid import uuid4
 from typing import List
 
 import mock
+import pytest
+
 from unittest.mock import ANY
 
-import pytest
+from sqlalchemy.orm import Session
+
+
 from fastapi.testclient import TestClient
 from requests import Response
 
@@ -13,9 +17,7 @@ from main import app
 from acm_service.routers.accounts import get_db, get_rabbit_producer
 from acm_service.utils.env import API_TOKEN
 from acm_service.sql_app.account_dal import AccountDAL
-from sqlalchemy.orm import Session
 from acm_service.sql_app.models import Account
-
 from acm_service.utils.publish import RabbitProducer
 
 

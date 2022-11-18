@@ -41,15 +41,6 @@ async def startup():
         logger.info('Dispatching events was temporary disabled, '
                     'so that we won do not worry about RabbitMQ message limits in our PaaS provider')
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
-
-# https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html?highlight=create_async_engine
-@app.on_event("shutdown")
-async def shutdown():
-    await engine.dispose()
-
 
 @app.get("/")
 async def root():
