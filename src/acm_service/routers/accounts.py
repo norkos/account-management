@@ -5,12 +5,11 @@ from acm_service.sql_app import schemas
 from acm_service.utils.env import API_TOKEN
 from acm_service.utils.publish import RabbitProducer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_db, get_rabbit_producer
+from acm_service.dependencies import get_account_dal, get_rabbit_producer
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
-import decorator
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -27,8 +26,13 @@ router = APIRouter(
 )
 
 
-@router.get('/{account_id}', response_model=schemas.AccountInDB)
-async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
+@router.get('', response_model=list[schemas.AccountWithoutAgents])
+async def read_accounts(database: AccountDAL = Depends(get_account_dal)):
+    return await database.get_all()
+
+
+@router.get('/{account_id}', response_model=schemas.AccountWithoutAgents)
+async def read_account(account_id: str, database: AccountDAL = Depends(get_account_dal)):
     db_account = await database.get(account_id)
 
     if db_account is None:
@@ -37,27 +41,33 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_db)):
     return db_account
 
 
-@router.get('', response_model=list[schemas.AccountInDB])
-async def read_accounts(database: AccountDAL = Depends(get_db)):
-    return await database.get_all()
+@router.post('/generate_company_raport/{account_id}', response_model=schemas.Account)
+async def read_account_with_agents(account_id: str, database: AccountDAL = Depends(get_account_dal)):
+    db_account = await database.get_with_agents(account_id)
+
+    if db_account is None:
+        raise_not_found('Account not found')
+
+    return db_account
 
 
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_account(account_id: str, database: AccountDAL = Depends(get_db)):
+async def delete_account(account_id: str, database: AccountDAL = Depends(get_account_dal)):
     if await database.get(account_id) is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(account_id)
     logger.info(f'Account {account_id} was deleted')
 
 
-@router.put('', response_model=schemas.AccountInDB)
-async def update_account(account_id: str, account: schemas.AccountCreate, database: AccountDAL = Depends(get_db)):
+#@router.put('', response_model=schemas.Account)
+async def update_account(account_id: str, account: schemas.AccountCreate,
+                         database: AccountDAL = Depends(get_account_dal)):
     account = await database.update(account_id, **account.dict())
     return account
 
 
-@router.post('', response_model=schemas.AccountInDB)
-async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_db),
+@router.post('', response_model=schemas.AccountWithoutAgents)
+async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     if await database.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')

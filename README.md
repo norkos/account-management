@@ -7,6 +7,7 @@ The goal of the project was to play with the Microservice architecture and impro
 - database with asyncio
 - pydantic and types
 - decorators
+- alembic
 - RabbitMQ used in an async way
   - under `consumer` you might find async consumer
 - Docker, how to make a smart environment: 
@@ -19,7 +20,6 @@ The goal of the project was to play with the Microservice architecture and impro
    - Liberato ![Liberato](doc/liberato.JPG) 
 
 ## What is still on the TODO list?
-- introduce alembic
 - introduce caching
 - play more with Heroku
   - extends telemetry with something like the Grafana dashboards (let's see what Heroku has)

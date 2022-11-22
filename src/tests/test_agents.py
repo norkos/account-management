@@ -5,24 +5,26 @@ from fastapi.testclient import TestClient
 from requests import Response
 
 from main import app
-from acm_service.routers.accounts import get_account_dal, get_rabbit_producer
-from acm_service.utils.env import API_TOKEN
 
-from .utils import AgentDB, AccountDALStub, RabbitProducerStub
+from acm_service.utils.env import API_TOKEN
+from acm_service.dependencies import get_agent_dal, get_rabbit_producer
+
+from .utils import AgentDB, AgentDALStub, RabbitProducerStub
+
 
 client = TestClient(app)
 localDb = AgentDB()
 
 
 def override_get_db():
-    return AccountDALStub(localDb)
+    return AgentDALStub(localDb)
 
 
 def override_get_rabbit_producer():
     return RabbitProducerStub()
 
 
-app.dependency_overrides[get_account_dal] = override_get_db
+app.dependency_overrides[get_agent_dal] = override_get_db
 app.dependency_overrides[get_rabbit_producer] = override_get_rabbit_producer
 
 
@@ -31,21 +33,22 @@ def run_before_and_after_tests(tmpdir):
     localDb.reset()
 
 
-def create_account(name: str, email: str) -> Response:
+def create_agent(account_uuid: str, name: str, email: str) -> Response:
     return client.post(
-        '/accounts',
+        f'/accounts/{account_uuid}/agents',
         headers={"X-Token": API_TOKEN},
         json={'name': name, 'email': email}
     )
 
 
 @mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_create_account(mock_async_publish):
+def test_create_agent(mock_async_publish):
+    parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
 
-    response = create_account(name, mail)
-    mock_async_publish.assert_called_once_with(ANY, method="create_account", body=response.json()['id'])
+    response = create_agent(parent_uuid, name, mail)
+    mock_async_publish.assert_called_once_with(ANY, method="create_agent", body=response.json()['id'])
 
     assert response.status_code == 200
     assert response.json()['name'] == name
@@ -53,21 +56,25 @@ def test_create_account(mock_async_publish):
 
 
 def test_create_account_duplicated_mail():
-    create_account('my_name', 'my_mail@mail.com')
-    response = create_account('my_name2', 'my_mail@mail.com')
+    parent_uuid = localDb.create_random_parent()
+
+    create_agent(parent_uuid, 'my_name', 'my_mail@mail.com')
+    response = create_agent(parent_uuid, 'my_name2', 'my_mail@mail.com')
 
     assert response.status_code == 400
     assert response.json() == {"detail": "E-mail already used"}
 
 
 def test_create_account_invalid_mail():
-    response = create_account('my_name2', 'my_mailmail.com')
+    parent_uuid = localDb.create_random_parent()
+    response = create_agent(parent_uuid, 'my_name2', 'my_mailmail.com')
     assert response.status_code == 422
 
 
 def test_create_accounts_bad_token():
+    parent_uuid = localDb.create_random_parent()
     response = client.post(
-        '/accounts',
+        f'/accounts/${parent_uuid}/agents',
         headers={"X-Token": "wrong one"},
         json={'name': 'my_name', 'email': 'test@mail.com'}
     )
@@ -75,13 +82,14 @@ def test_create_accounts_bad_token():
     assert response.json() == {"detail": "Invalid X-Token header"}
 
 
-def test_read_account():
+def test_read_agent():
+    parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
-    create_response = create_account(name, mail)
+    create_response = create_agent(parent_uuid, name, mail)
 
     read_response = client.get(
-        f'/accounts/{create_response.json()["id"]}',
+        f'/accounts/{parent_uuid}/agents/{create_response.json()["id"]}',
         headers={"X-Token": API_TOKEN}
     )
     assert read_response.status_code == 200
@@ -89,35 +97,37 @@ def test_read_account():
         'id': create_response.json()['id'],
         'name':  name,
         'email': mail,
+        'account_id': parent_uuid
     }
 
 
-def test_delete_account():
+def test_delete_agent():
+    parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
-    create_response = create_account(name, mail)
+    create_response = create_agent(parent_uuid, name, mail)
 
     delete_response = client.delete(
-        f'/accounts/{create_response.json()["id"]}',
+        f'/accounts/{parent_uuid}/agents/{create_response.json()["id"]}',
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
 
     read_response = client.get(
-        f'/accounts/{create_response.json()["id"]}',
+        f'/accounts/{parent_uuid}/agents/{create_response.json()["id"]}',
         headers={"X-Token": API_TOKEN}
     )
     assert read_response.status_code == 404
-    assert read_response.json() == {"detail": "Account not found"}
 
 
-def test_read_account_bad_token():
+def test_read_agent_bad_token():
+    parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
-    create_response = create_account(name, mail)
+    create_response = create_agent(parent_uuid, name, mail)
 
     read_response = client.get(
-        f'/accounts/{create_response.json()["id"]}',
+        f'/accounts/{parent_uuid}/agents/{create_response.json()["id"]}',
         headers={"X-Token": 'wrong one'}
     )
 
@@ -125,33 +135,26 @@ def test_read_account_bad_token():
     assert read_response.json() == {"detail": "Invalid X-Token header"}
 
 
-def test_read_account_not_found():
+def test_read_agent_not_found():
+    parent_uuid = localDb.create_random_parent()
     response = client.get(
-        '/accounts/100',
+        f'/accounts/{parent_uuid}/agents/100',
         headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Account not found"}
+    assert response.json() == {"detail": "Agent not found"}
 
 
-def test_read_accounts():
+def test_read_agents():
+    parent_uuid = localDb.create_random_parent()
     how_many = 20
     for x in range(how_many):
-        create_account('my_name', f'test{x}@mail.com')
+        create_agent(parent_uuid, 'my_name', f'test{x}@mail.com')
 
     response = client.get(
-        '/accounts/',
+        f'/accounts/{parent_uuid}/agents',
         headers={"X-Token": API_TOKEN}
     )
 
     assert response.status_code == 200
     assert len(response.json()) == how_many
-
-
-def test_read_accounts_bad_token():
-    response = client.get(
-        '/accounts/',
-        headers={"X-Token": "wrong one"}
-    )
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid X-Token header"}
