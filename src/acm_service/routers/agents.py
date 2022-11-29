@@ -37,7 +37,7 @@ async def read_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal))
 
 
 @router.post('/agents/find_agent/{email}', response_model=Agent)
-async def read_agent(email: str, database: AgentDAL = Depends(get_agent_dal)):
+async def find_agent(email: str, database: AgentDAL = Depends(get_agent_dal)):
     agent = await database.get_agent_by_email(email)
 
     if agent is None:
@@ -51,6 +51,11 @@ async def read_agents(account_id: str, database: AgentDAL = Depends(get_agent_da
     return await database.get_agents_for_account(account_id)
 
 
+@router.get('/agents', response_model=list[Agent])
+async def read_agents(database: AgentDAL = Depends(get_agent_dal)):
+    return await database.get_agents()
+
+
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
 async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL = Depends(get_agent_dal),
                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
@@ -62,6 +67,12 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
 
     await rabbit_producer.async_publish('create_agent', result.id)
     return result
+
+
+@router.post('/agents/clear', status_code=status.HTTP_202_ACCEPTED)
+async def clear(database: AgentDAL = Depends(get_agent_dal)):
+    await database.delete_all()
+    logger.info(f'All agents were deleted')
 
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)

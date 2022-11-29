@@ -10,6 +10,9 @@ if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
+#TOKEN = os.environ.get('AUTH_TOKEN', 'L2jzA#^Z0^t7#w3dL&s%')
+#URL = os.environ.get('URL', 'https://secure-spire-80562.herokuapp.com')
+
 TOKEN = os.environ.get('AUTH_TOKEN', 'local')
 URL = os.environ.get('URL', 'http://localhost:8080')
 
@@ -117,10 +120,8 @@ async def flow_of_the_account(amount_of_agents: int) -> None:
     account_name = str(uuid4())
     email = f'{account_name}@gmail.com'
 
-    await asyncio.sleep(rand())
     uuid = await create_account(account_name, email)
 
-    await asyncio.sleep(rand())
     account = await get_account(uuid)
 
     assert account['name'] == account_name
@@ -133,14 +134,11 @@ async def flow_of_the_account(amount_of_agents: int) -> None:
         agent = await create_agent(uuid, agent_name, agent_email)
         agents.append(agent)
 
-    await asyncio.sleep(rand())
-
     response = await get_agents(uuid)
     assert len(response) == amount_of_agents
 
     await delete_account(account['id'])
 
-    await asyncio.sleep(rand())
     account = await get_account(account['id'])
     assert account['detail'] == 'Account not found'
 
@@ -180,11 +178,11 @@ async def create_several_accounts(how_many_accounts: int) -> None:
 
 
 def test_traffic_model():
-    how_many = 2
-    asyncio.run(traffic_model(how_many, 2))
+    how_many = 10
+    asyncio.run(traffic_model(how_many, 10))
 
 
-def test_create_and_remove():
-    how_many = 2
+def test_create_and_remove_accounts():
+    how_many = 100
     asyncio.run(create_several_accounts(how_many))
     asyncio.run(remove_all_accounts())

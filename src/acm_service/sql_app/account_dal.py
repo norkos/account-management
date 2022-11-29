@@ -56,8 +56,12 @@ class AccountDAL:
         return query.scalars().all()
 
     @decorate_database
+    async def delete_all(self):
+        await self._session.execute(delete(Account))
+
+    @decorate_database
     async def delete(self, uuid: str):
-        request = select(Account).options(joinedload(Account.agents))
+        request = select(Account).where(Account.id == uuid).options(joinedload(Account.agents))
         account = await self._session.scalar(request)
         await self._session.delete(account)
         await self._session.commit()

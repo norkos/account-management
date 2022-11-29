@@ -40,6 +40,11 @@ class AgentDAL:
         return query.scalar()
 
     @decorate_database
+    async def get_agents(self):
+        query = await self._session.execute(select(Agent).order_by(Agent.name))
+        return query.scalars().all()
+
+    @decorate_database
     async def get_agent_by_email(self, email: str) -> Agent | None:
         query = await self._session.execute(select(Agent).where(Agent.email == email))
         return query.scalar()
@@ -49,10 +54,13 @@ class AgentDAL:
         query = await self._session.execute(select(Agent).where(Agent.account_id == uuid).order_by(Agent.name))
         return query.scalars().all()
 
-    @decorate_database
     async def delete(self, uuid: str):
         await self._session.execute(delete(Agent).where(Agent.id == uuid))
         await self._session.commit()
+
+    @decorate_database
+    async def delete_all(self):
+        await self._session.execute(delete(Agent))
 
     @decorate_database
     async def update(self, uuid: str, **kwargs):
@@ -66,4 +74,7 @@ class AgentDAL:
     async def close(self):
         if self._session and self._session.is_active:
             await self._session.close()
+
+
+
 

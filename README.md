@@ -22,13 +22,11 @@ The goal of the project was to play with the Microservice architecture and impro
 ## What is still on the TODO list?
 - introduce caching
 - play more with Heroku
-  - extends telemetry with something like the Grafana dashboards (let's see what Heroku has)
   - check what resilience can be supported by Heroku
   - check if vertical/horizontal scaling can be supported by Heroku 
 - add more consumers to the service and play with RabbitMQ topics
 - deploy this to Amazon ECS
 - CORS
-
 
 ## How to run it
 - to have all the environment in one place `docker-compose up`

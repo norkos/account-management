@@ -59,11 +59,10 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_acc
     logger.info(f'Account {account_id} was deleted')
 
 
-#@router.put('', response_model=schemas.Account)
-async def update_account(account_id: str, account: schemas.AccountCreate,
-                         database: AccountDAL = Depends(get_account_dal)):
-    account = await database.update(account_id, **account.dict())
-    return account
+@router.post('/clear', status_code=status.HTTP_202_ACCEPTED)
+async def clear(database: AccountDAL = Depends(get_account_dal)):
+    await database.delete_all()
+    logger.info(f'All accounts were deleted')
 
 
 @router.post('', response_model=schemas.AccountWithoutAgents)
