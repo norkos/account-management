@@ -5,6 +5,7 @@ import json
 import random
 import os
 import names
+import namegenerator
 
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -115,8 +116,9 @@ async def delete_accounts(accounts: {}) -> None:
 
 
 async def flow_of_the_account(amount_of_agents: int, delete: bool = True) -> None:
-    account_name = names.get_first_name() + '.' + names.get_last_name()
-    email = f'{account_name}@gmail.com'
+    account_name_raw = namegenerator.gen()
+    account_name = account_name_raw.replace('-', ' ')
+    email = f'{account_name_raw}@gmail.com'
 
     uuid = await create_account(account_name, email)
 
