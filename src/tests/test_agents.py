@@ -6,7 +6,7 @@ from requests import Response
 
 from main import app
 
-from acm_service.utils.env import API_TOKEN
+from acm_service.utils.env import API_TOKEN, TWO_FA
 from acm_service.dependencies import get_agent_dal, get_rabbit_producer
 
 from .utils import AgentDB, AgentDALStub, RabbitProducerStub
@@ -158,3 +158,30 @@ def test_read_agents():
 
     assert response.status_code == 200
     assert len(response.json()) == how_many
+
+
+def test_can_remove_all_agents():
+    parent_uuid = localDb.create_random_parent()
+    create_agent(parent_uuid, 'my_name', 'my_mail1@mail.com')
+    create_agent(parent_uuid, 'my_name', 'my_mail2@mail.com')
+
+    response = client.post(
+        f'/agents/clear',
+        headers={"X-Token": API_TOKEN,
+                 "TWO-FA": TWO_FA}
+    )
+
+    assert response.status_code == 202
+
+
+def test_cannot_remove_all_agents():
+    parent_uuid = localDb.create_random_parent()
+    create_agent(parent_uuid, 'my_name', 'my_mail1@mail.com')
+    create_agent(parent_uuid, 'my_name2', 'my_mail2@mail.com')
+
+    response = client.post(
+        f'/agents/clear',
+        headers={"X-Token": API_TOKEN}
+    )
+
+    assert response.status_code == 422

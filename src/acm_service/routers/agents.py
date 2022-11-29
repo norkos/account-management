@@ -1,23 +1,18 @@
-from fastapi import Depends, Header
+from typing import Any
+
+from fastapi import Depends
 from fastapi import APIRouter, status, Response
-
-from acm_service.sql_app.schemas import Agent, AgentCreate
-from acm_service.utils.env import API_TOKEN
-from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_agent_dal, get_rabbit_producer
-from acm_service.sql_app.agent_dal import AgentDAL
-from acm_service.utils.logconf import DEFAULT_LOGGER
-
 import logging
 
+from acm_service.sql_app.schemas import Agent, AgentCreate
+from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
+from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header
+from acm_service.sql_app.agent_dal import AgentDAL
+from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.publish import RabbitProducer
 
+
 logger = logging.getLogger(DEFAULT_LOGGER)
-
-
-async def get_token_header(x_token: str = Header()):
-    if x_token != API_TOKEN:
-        raise_bad_request("Invalid X-Token header")
 
 
 router = APIRouter(
@@ -70,7 +65,7 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
 
 
 @router.post('/agents/clear', status_code=status.HTTP_202_ACCEPTED)
-async def clear(database: AgentDAL = Depends(get_agent_dal)):
+async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AgentDAL = Depends(get_agent_dal)):
     await database.delete_all()
     logger.info(f'All agents were deleted')
 

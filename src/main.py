@@ -4,7 +4,7 @@ import uvicorn
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY
+from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 
 from scout_apm.api import Config
@@ -36,6 +36,12 @@ app.add_middleware(ScoutMiddleware)
 
 @app.on_event("startup")
 async def startup():
+    logger.info(f'Application started')
+    if len(API_TOKEN) == 0:
+        logger.error(f'Missing API_TOKEN in your env variables')
+    if len(TWO_FA) == 0:
+        logger.error(f'Missing TWO_FA in your env variables')
+
     if ENABLE_EVENTS == 'False':
         app.dependency_overrides[get_rabbit_producer] = get_local_rabbit_producer
         logger.info('Dispatching events was temporary disabled, '

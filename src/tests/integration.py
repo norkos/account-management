@@ -1,17 +1,14 @@
-from uuid import uuid4
-
 import aiohttp
 import asyncio
 import platform
 import json
 import random
 import os
+import names
+
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-
-#TOKEN = os.environ.get('AUTH_TOKEN', 'L2jzA#^Z0^t7#w3dL&s%')
-#URL = os.environ.get('URL', 'https://secure-spire-80562.herokuapp.com')
 
 TOKEN = os.environ.get('AUTH_TOKEN', 'local')
 URL = os.environ.get('URL', 'http://localhost:8080')
@@ -78,7 +75,8 @@ async def create_agent(account_id: str, name: str, email: str) -> str | None:
                                       'accept': 'application/json',
                                       'Content-Type': 'application/json'
                                       }) as session:
-        response = await session.post(f'{URL}/accounts/{account_id}/agents', data=json.dumps({"name": name, "email": email}))
+        response = await session.post(f'{URL}/accounts/{account_id}/agents',
+                                      data=json.dumps({"name": name, "email": email}))
 
         response_status_code = response.status.real
 
@@ -116,8 +114,8 @@ async def delete_accounts(accounts: {}) -> None:
     await asyncio.wait(tasks)
 
 
-async def flow_of_the_account(amount_of_agents: int) -> None:
-    account_name = str(uuid4())
+async def flow_of_the_account(amount_of_agents: int, delete: bool = True) -> None:
+    account_name = names.get_first_name() + '.' + names.get_last_name()
     email = f'{account_name}@gmail.com'
 
     uuid = await create_account(account_name, email)
@@ -129,7 +127,7 @@ async def flow_of_the_account(amount_of_agents: int) -> None:
 
     agents = []
     for x in range(amount_of_agents):
-        agent_name = str(uuid4())
+        agent_name = names.get_first_name() + '.' + names.get_last_name()
         agent_email = f'{agent_name}@gmail.com'
         agent = await create_agent(uuid, agent_name, agent_email)
         agents.append(agent)
@@ -137,25 +135,37 @@ async def flow_of_the_account(amount_of_agents: int) -> None:
     response = await get_agents(uuid)
     assert len(response) == amount_of_agents
 
-    await delete_account(account['id'])
+    if delete:
+        await delete_account(account['id'])
 
-    account = await get_account(account['id'])
-    assert account['detail'] == 'Account not found'
+        account = await get_account(account['id'])
+        assert account['detail'] == 'Account not found'
 
-    for agent in agents:
-        response = await get_agent(account, agent)
-        assert response['detail'] == 'Agent not found'
+        for agent in agents:
+            response = await get_agent(account, agent)
+            assert response['detail'] == 'Agent not found'
 
 
-async def traffic_model(how_many_accounts: int, how_many_agents: int) -> None:
+async def async_test_traffic_model():
+    #   given
+    clean_your_data = False
+    how_many_accounts = 10
+    how_many_agents_per_account = 10
+
+    # when
     tasks = []
-
     for x in range(0, how_many_accounts):
-        tasks.append(asyncio.create_task(flow_of_the_account(how_many_agents)))
-
+        tasks.append(asyncio.create_task(flow_of_the_account(how_many_agents_per_account, clean_your_data)))
     await asyncio.gather(*tasks)
-    accounts = await get_accounts()
-    assert len(accounts) == 0
+
+    # then
+    if clean_your_data:
+        accounts = await get_accounts()
+        assert len(accounts) == 0
+
+
+def test_traffic_model():
+    asyncio.run(async_test_traffic_model())
 
 
 async def remove_all_accounts() -> None:
@@ -177,12 +187,10 @@ async def create_several_accounts(how_many_accounts: int) -> None:
     assert len(result) == how_many_accounts
 
 
-def test_traffic_model():
-    how_many = 10
-    asyncio.run(traffic_model(how_many, 10))
-
-
 def test_create_and_remove_accounts():
+    # given
     how_many = 100
+
+    # when & then
     asyncio.run(create_several_accounts(how_many))
     asyncio.run(remove_all_accounts())

@@ -95,7 +95,7 @@ class AgentDALStub(AgentDAL):
     class SessionStub(Session):
         pass
 
-    def __init__(self, local_db: AccountDB):
+    def __init__(self, local_db: AgentDB):
         super().__init__(self.SessionStub())
         self._agents_by_uuid = local_db.entity_by_uuid
         self._agents_by_mail = local_db.entity_by_mail

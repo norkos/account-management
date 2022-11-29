@@ -1,22 +1,18 @@
-from fastapi import Depends, Header
+from typing import Any
+
+from fastapi import Depends
 from fastapi import APIRouter, status, Response
 
 from acm_service.sql_app import schemas
-from acm_service.utils.env import API_TOKEN
 from acm_service.utils.publish import RabbitProducer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_account_dal, get_rabbit_producer
+from acm_service.dependencies import get_account_dal, get_rabbit_producer, get_token_header, get_2fa_token_header
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
 
 logger = logging.getLogger(DEFAULT_LOGGER)
-
-
-async def get_token_header(x_token: str = Header()):
-    if x_token != API_TOKEN:
-        raise_bad_request("Invalid X-Token header")
 
 
 router = APIRouter(
@@ -60,7 +56,7 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_acc
 
 
 @router.post('/clear', status_code=status.HTTP_202_ACCEPTED)
-async def clear(database: AccountDAL = Depends(get_account_dal)):
+async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AccountDAL = Depends(get_account_dal)):
     await database.delete_all()
     logger.info(f'All accounts were deleted')
 

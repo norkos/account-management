@@ -6,7 +6,7 @@ from requests import Response
 
 from main import app
 from acm_service.routers.accounts import get_account_dal, get_rabbit_producer
-from acm_service.utils.env import API_TOKEN
+from acm_service.utils.env import API_TOKEN, TWO_FA
 
 from .utils import AgentDB, AccountDALStub, RabbitProducerStub
 
@@ -155,3 +155,28 @@ def test_read_accounts_bad_token():
     )
     assert response.status_code == 400
     assert response.json() == {"detail": "Invalid X-Token header"}
+
+
+def test_can_remove_all_accounts():
+    create_account('my_name', 'my_mail1@mail.com')
+    create_account('my_name', 'my_mail2@mail.com')
+
+    response = client.post(
+        f'/accounts/clear',
+        headers={"X-Token": API_TOKEN,
+                 "TWO-FA": TWO_FA}
+    )
+
+    assert response.status_code == 202
+
+
+def test_cannot_remove_all_accounts():
+    create_account('my_name', 'my_mail1@mail.com')
+    create_account('my_name2', 'my_mail2@mail.com')
+
+    response = client.post(
+        f'/accounts/clear',
+        headers={"X-Token": API_TOKEN}
+    )
+
+    assert response.status_code == 422

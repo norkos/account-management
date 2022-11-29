@@ -18,10 +18,11 @@ services:
     environment:
       PORT: 80
       AUTH_TOKEN: local
+      TWO_FA: local_2fa
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
       ENABLE_EVENTS : 'True'
-      DEBUG_LOGGER_LEVEL : 'False'
+      DEBUG_LOGGER_LEVEL : 'True'
     ports:
       - 8080:80 #localhost:Dockerfile
     volumes:

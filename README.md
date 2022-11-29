@@ -36,13 +36,16 @@ The goal of the project was to play with the Microservice architecture and impro
   - heroku login
   - heroku container:login
   - heroku create
+  - define ENV variables in Heroku
+       - create `AUTH_TOKEN` with token details needed to communicate with API
+       - create `TWO_FA` with token needed to erase the DB
+       - if you want to see debug logs set `DEBUG_LOGGER_LEVEL` into  `True`
   - install extensions in Heroku
     - (mandatory) postgres
-       - create `ASYNC_DB_URL` in heroku EVN variables 
+       - create `ASYNC_DB_URL` in heroku EVN variables
     - (optional) rabbitMQ
        - set `ENABLE_EVENTS : True` in heroku EVN variable and create `CLOUDAMQP_URL` in heroku EVN variables 
     - (optional) Scout
-    - (optional) if you want to see debug logs set `DEBUG_LOGGER_LEVEL: True` in heroku EVN variables
   - heroku container:push web
   - heroku container:release web
   - heroku open
