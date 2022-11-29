@@ -22,7 +22,7 @@ services:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
       ENABLE_EVENTS : 'True'
-      DEBUG_LOGGER_LEVEL : 'True'
+      DEBUG_LOGGER_LEVEL : 'False'
     ports:
       - 8080:80 #localhost:Dockerfile
     volumes:

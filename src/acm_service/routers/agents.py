@@ -4,6 +4,8 @@ from fastapi import Depends
 from fastapi import APIRouter, status, Response
 import logging
 
+from fastapi_pagination import Page, paginate
+
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
 from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header
@@ -41,14 +43,14 @@ async def find_agent(email: str, database: AgentDAL = Depends(get_agent_dal)):
     return agent
 
 
-@router.get('/accounts/{account_id}/agents', response_model=list[Agent])
+@router.get('/accounts/{account_id}/agents', response_model=Page[Agent])
 async def read_agents(account_id: str, database: AgentDAL = Depends(get_agent_dal)):
-    return await database.get_agents_for_account(account_id)
+    return paginate(await database.get_agents_for_account(account_id))
 
 
-@router.get('/agents', response_model=list[Agent])
+@router.get('/agents', response_model=Page[Agent])
 async def read_agents(database: AgentDAL = Depends(get_agent_dal)):
-    return await database.get_agents()
+    return paginate(await database.get_agents())
 
 
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
@@ -65,16 +67,20 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
 
 
 @router.post('/agents/clear', status_code=status.HTTP_202_ACCEPTED)
-async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AgentDAL = Depends(get_agent_dal)):
+async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AgentDAL = Depends(get_agent_dal),
+                rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await database.delete_all()
+    await rabbit_producer.async_publish('delete_agent', 'all')
     logger.info(f'All agents were deleted')
 
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal)):
+async def delete_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal),
+                       rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     if await database.get(agent_id) is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(agent_id)
+    await rabbit_producer.async_publish('delete_agent', agent_id)
     logger.info(f'Agent {agent_id} was deleted')
 
 

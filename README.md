@@ -8,6 +8,7 @@ The goal of the project was to play with the Microservice architecture and impro
 - pydantic and types
 - decorators
 - alembic
+- pagination for REST requests
 - RabbitMQ used in an async way
   - under `consumer` you might find async consumer
 - Docker, how to make a smart environment: 
@@ -30,7 +31,8 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ## How to run it
 - to have all the environment in one place `docker-compose up`
-  - because I don't want to control the order of the images in docker-compose, you might need to run alembic migrations by logging into `backend` image and running `upgrade_db.sh`
+  - because I don't want to control the order of the images in docker-compose, you might need to run alembic 
+migrations by logging into `backend` image and running `upgrade_db.sh`
 - for pytest please run `pytest`
 - for Heroku please follow https://devcenter.heroku.com/articles/container-registry-and-runtime:
   - heroku login

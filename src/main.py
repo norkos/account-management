@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
+from fastapi_pagination import add_pagination
 
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
@@ -32,6 +33,7 @@ Config.set(
     monitor=True,
 )
 app.add_middleware(ScoutMiddleware)
+add_pagination(app)
 
 
 @app.on_event("startup")

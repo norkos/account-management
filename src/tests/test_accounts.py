@@ -92,7 +92,8 @@ def test_read_account():
     }
 
 
-def test_delete_account():
+@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
+def test_delete_account(mock_async_publish):
     name = 'my_name'
     mail = 'test@mail.com'
     create_response = create_account(name, mail)
@@ -102,6 +103,7 @@ def test_delete_account():
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
+    mock_async_publish.assert_called_with(ANY, method="delete_account", body=create_response.json()["id"])
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -140,12 +142,12 @@ def test_read_accounts():
         create_account('my_name', f'test{x}@mail.com')
 
     response = client.get(
-        '/accounts/',
+        '/accounts?page=1&size=100',
         headers={"X-Token": API_TOKEN}
     )
 
     assert response.status_code == 200
-    assert len(response.json()) == how_many
+    assert len(response.json()['items']) == how_many
 
 
 def test_read_accounts_bad_token():
@@ -157,7 +159,8 @@ def test_read_accounts_bad_token():
     assert response.json() == {"detail": "Invalid X-Token header"}
 
 
-def test_can_remove_all_accounts():
+@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
+def test_can_remove_all_accounts(mock_async_publish):
     create_account('my_name', 'my_mail1@mail.com')
     create_account('my_name', 'my_mail2@mail.com')
 
@@ -166,6 +169,7 @@ def test_can_remove_all_accounts():
         headers={"X-Token": API_TOKEN,
                  "TWO-FA": TWO_FA}
     )
+    mock_async_publish.assert_called_with(ANY, method="delete_account", body='all')
 
     assert response.status_code == 202
 
