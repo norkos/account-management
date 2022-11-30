@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi import APIRouter, status, Response
 import logging
 
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
@@ -12,7 +12,7 @@ from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_tok
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.publish import RabbitProducer
-
+from acm_service.utils.pagination import Page
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
