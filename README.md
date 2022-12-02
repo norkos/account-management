@@ -13,6 +13,7 @@ The goal of the project was to play with the Microservice architecture and impro
 
 #### Target Diagram
 ![Papertrail](doc/architecture.jpeg)
+https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_loc=-176%2C-119%2C3072%2C1551%2CCFRzE~qEaxOQ&invitationId=inv_700a331f-39a6-41a5-a14a-7c5007f38322
 
 #### Data model
 <img src="doc/data.JPG" height="300"></img>
@@ -47,15 +48,16 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ### How to run it
 - to have all the environment in one place `docker-compose up`
-  - because I don't want to control the order of the images in docker-compose, you might need to run alembic 
-migrations by logging into `backend` docker image and running `upgrade_db.sh`
+  - to keep environment more robust I don't want to control the order of the images in docker-compose. Therefore, you need to run alembic 
+migrations by logging into `backend` docker image and running `migrate_db.sh`
+  - API address when running Docker: http://localhost:9090/_swagger
 - for pytest please run `pytest`
 - for Heroku please follow https://devcenter.heroku.com/articles/container-registry-and-runtime:
   - heroku login
   - heroku container:login
   - heroku create
   - define ENV variables in Heroku
-       - create `AUTH_TOKEN` with token details needed to communicate with API
+       - create `AUTH_TOKEN` with token details needed to communicate with RESTAPI
        - create `TWO_FA` with token needed to erase the DB
        - if you want to see debug logs set `DEBUG_LOGGER_LEVEL` into  `True`
   - install extensions in Heroku
@@ -66,6 +68,6 @@ migrations by logging into `backend` docker image and running `upgrade_db.sh`
     - (optional) Scout
   - heroku container:push web
   - heroku container:release web
-  - heroku open
+  
   
 ### Have fun ;)
