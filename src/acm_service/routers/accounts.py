@@ -35,7 +35,7 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_accou
     db_account = await database.get(account_id)
 
     if db_account is None:
-        raise_not_found('Account not found')
+        raise_not_found(f'Account {account_id} not found')
 
     return db_account
 
@@ -45,7 +45,7 @@ async def read_account_with_agents(account_id: str, database: AccountDAL = Depen
     db_account = await database.get_with_agents(account_id)
 
     if db_account is None:
-        raise_not_found('Account not found')
+        raise_not_found(f'Account {account_id} not found')
 
     return db_account
 

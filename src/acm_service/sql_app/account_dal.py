@@ -1,5 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload, joinedload, Session
 from sqlalchemy.future import select
 from sqlalchemy import delete, update
 from typing import List
@@ -24,7 +23,7 @@ def decorate_database(coro):
 
 class AccountDAL:
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: Session):
         self._session = session
 
     @decorate_database

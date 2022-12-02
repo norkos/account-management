@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi_pagination import add_pagination
+from starlette.requests import Request
 
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
@@ -11,6 +12,7 @@ from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from scout_apm.api import Config
 from scout_apm.async_.starlette import ScoutMiddleware
 
+
 from logging.config import dictConfig
 import logging
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 
 
 app = FastAPI(
+    debug=True,
     title='account-management',
     version='0.1',
     docs_url='/_swagger'
@@ -54,6 +57,23 @@ async def startup():
 async def root():
     return {'msg': 'Hello my friend !'}
 
+
+#@app.exception_handler(StarletteHTTPException)
+#async def custom_http_exception_handler(request, exc):
+#    logger.error(f"OMG! An HTTP error!: {repr(exc)}")
+#    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def debug_exception_handler(request: Request, exc: Exception):
+    import traceback
+    response = "".join(
+            traceback.format_exception(
+                etype=type(exc),
+                value=exc,
+                tb=exc.__traceback__))
+    logger.error(f"OMG! An HTTP error!: {repr(exc)} with stack {response}")
+    raise exc
 
 if __name__ == "__main__":
     uvicorn.run(

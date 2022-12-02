@@ -62,7 +62,7 @@ def test_create_account_duplicated_mail():
     response = create_agent(parent_uuid, 'my_name2', 'my_mail@mail.com')
 
     assert response.status_code == 400
-    assert response.json() == {"detail": "E-mail already used"}
+    assert response.json() == {"detail": "E-mail my_mail@mail.com is already used"}
 
 
 def test_create_account_invalid_mail():
@@ -144,7 +144,7 @@ def test_read_agent_not_found():
         headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Agent not found"}
+    assert response.json() == {"detail": "Agent 100 not found"}
 
 
 def test_read_agents():

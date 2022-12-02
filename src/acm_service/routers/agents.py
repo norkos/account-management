@@ -28,7 +28,7 @@ async def read_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal))
     agent = await database.get(agent_id)
 
     if agent is None:
-        raise_not_found('Agent not found')
+        raise_not_found(f'Agent {agent_id} not found')
 
     return agent
 
@@ -38,7 +38,7 @@ async def find_agent(email: str, database: AgentDAL = Depends(get_agent_dal)):
     agent = await database.get_agent_by_email(email)
 
     if agent is None:
-        raise_not_found('Agent not found')
+        raise_not_found(f'Agent {email} not found')
 
     return agent
 
@@ -57,7 +57,7 @@ async def read_agents(database: AgentDAL = Depends(get_agent_dal)):
 async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL = Depends(get_agent_dal),
                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     if await database.get_agent_by_email(agent.email):
-        raise_bad_request('E-mail already used')
+        raise_bad_request(f'E-mail {agent.email} is already used')
 
     result = await database.create(name=agent.name, email=agent.email, account_id=account_id)
     logger.info(f'Agent {result.id} was created')

@@ -1,13 +1,12 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete, update
+from sqlalchemy.orm import Session
 from typing import List
 from uuid import uuid4
 
 from acm_service.sql_app.models import Agent
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
-from fastapi_pagination.ext.async_sqlalchemy import paginate
 
 import logging
 
@@ -25,7 +24,7 @@ def decorate_database(coro):
 
 class AgentDAL:
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: Session):
         self._session = session
 
     @decorate_database

@@ -1,9 +1,7 @@
-from abc import ABC
 from uuid import uuid4
 from typing import List
 
-from pydantic import EmailStr, UUID4
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy.orm import Session
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
@@ -55,7 +53,7 @@ class RabbitProducerStub(RabbitProducer):
 
 
 class AccountDALStub(AccountDAL):
-    class SessionStub(Session, AsyncSession, ABC):
+    class SessionStub(Session):
         pass
 
     def __init__(self, local_db: AccountDB):

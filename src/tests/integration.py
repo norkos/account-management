@@ -6,6 +6,7 @@ import random
 import os
 import names
 import namegenerator
+import uuid
 
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -14,7 +15,6 @@ if platform.system() == 'Windows':
 TOKEN = os.environ.get('AUTH_TOKEN', 'local')
 URL = os.environ.get('URL', 'http://localhost:8080')
 
-
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
 
@@ -22,10 +22,10 @@ def rand() -> int:
     return random.randint(0, 2)
 
 
-async def get_account(uuid: str) -> {}:
+async def get_account(account_uuid: str) -> {}:
     async with aiohttp.ClientSession(headers=
                                      {'x-token': TOKEN}) as session:
-        response = await session.get(f'{URL}/accounts/{uuid}')
+        response = await session.get(f'{URL}/accounts/{account_uuid}')
         return await response.json()
 
 
@@ -69,9 +69,9 @@ async def create_account(name: str, email: str) -> str | None:
 
         if response_status_code in HTTP_RESPONSE_ACCEPT:
             content = await response.json()
-            uuid = content['id']
-            print(f'Account {uuid} created')
-            return uuid
+            account_uuid = content['id']
+            print(f'Account {account_uuid} created')
+            return account_uuid
 
         print(f'Cannot create the account for name={name} and mail={email}. '
               f'Response code={response_status_code}.')
@@ -91,26 +91,26 @@ async def create_agent(account_id: str, name: str, email: str) -> str | None:
 
         if response_status_code in HTTP_RESPONSE_ACCEPT:
             content = await response.json()
-            uuid = content['id']
-            print(f'Agent {uuid} created')
-            return uuid
+            agent_uuid = content['id']
+            print(f'Agent {agent_uuid} created')
+            return agent_uuid
 
         print(f'Cannot create the agent for name={name} and mail={email} for account={account_id}. '
               f'Response code={response_status_code}.')
         return None
 
 
-async def delete_account(uuid: str) -> None:
+async def delete_account(account_uuid: str) -> None:
     async with aiohttp.ClientSession(headers=
                                      {'x-token': TOKEN,
                                       'accept': 'application/json',
                                       }, ) as session:
-        result = await session.delete(f'{URL}/accounts/{uuid}')
+        result = await session.delete(f'{URL}/accounts/{account_uuid}')
 
         if result.status.real in HTTP_RESPONSE_ACCEPT:
-            print(f'Account {uuid} deleted')
+            print(f'Account {account_uuid} deleted')
         else:
-            print(f'Account {uuid} NOT deleted')
+            print(f'Account {account_uuid} NOT deleted')
 
 
 async def delete_accounts(accounts: {}) -> None:
@@ -128,9 +128,13 @@ async def flow_of_the_account(amount_of_agents: int, delete: bool = True) -> Non
     account_name = account_name_raw.replace('-', ' ')
     email = f'{account_name_raw}@gmail.com'
 
-    uuid = await create_account(account_name, email)
+    account_uuid = await create_account(account_name, email)
 
-    account = await get_account(uuid)
+    if not account_uuid:
+        print('CANNOT CREATE ACCOUNT')
+        return
+
+    account = await get_account(account_uuid)
 
     assert account['name'] == account_name
     assert account['email'] == email
@@ -138,28 +142,29 @@ async def flow_of_the_account(amount_of_agents: int, delete: bool = True) -> Non
     agents = []
     for x in range(amount_of_agents):
         agent_name = names.get_first_name() + ' ' + names.get_last_name() + ' ' + names.get_first_name()
-        agent_email = f'{agent_name.replace(" ",".")}@{account_name_raw}.com'
-        agent = await create_agent(uuid, agent_name, agent_email)
+        random_code = str(uuid.uuid4()).split('-')[1]
+        agent_email = f'{agent_name.replace(" ",".")}@{account_name_raw}-{random_code}.com'
+        agent = await create_agent(account_uuid, agent_name, agent_email)
+        await asyncio.sleep(rand())
         agents.append(agent)
 
-    assert await get_amount_of_agents(uuid) == amount_of_agents
+    assert await get_amount_of_agents(account_uuid) == amount_of_agents
 
     if delete:
         await delete_account(account['id'])
 
-        account = await get_account(account['id'])
-        assert account['detail'] == 'Account not found'
+        #account = await get_account(account['id'])
+        #assert account['detail'] == 'Account not found'
 
-        for agent in agents:
-            response = await get_agent(account, agent)
-            assert response['detail'] == 'Agent not found'
-    await asyncio.sleep(0)
+        #for agent in agents:
+        #    response = await get_agent(account, agent)
+        #    assert response['detail'] == 'Agent not found'
 
 
 async def async_test_traffic_model():
     #   given
     clean_your_data = False
-    how_many_accounts = 1
+    how_many_accounts = 10
     how_many_agents_per_account = 60
 
     # when

@@ -8,10 +8,10 @@ from main import app
 from acm_service.routers.accounts import get_account_dal, get_rabbit_producer
 from acm_service.utils.env import API_TOKEN, TWO_FA
 
-from .utils import AgentDB, AccountDALStub, RabbitProducerStub
+from .utils import AccountDB, AccountDALStub, RabbitProducerStub
 
 client = TestClient(app)
-localDb = AgentDB()
+localDb = AccountDB()
 
 
 def override_get_db():
@@ -98,8 +98,9 @@ def test_delete_account(mock_async_publish):
     mail = 'test@mail.com'
     create_response = create_account(name, mail)
 
+    account_id = create_response.json()["id"]
     delete_response = client.delete(
-        f'/accounts/{create_response.json()["id"]}',
+        f'/accounts/{account_id}',
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
@@ -110,7 +111,7 @@ def test_delete_account(mock_async_publish):
         headers={"X-Token": API_TOKEN}
     )
     assert read_response.status_code == 404
-    assert read_response.json() == {"detail": "Account not found"}
+    assert read_response.json() == {"detail": f"Account {account_id} not found"}
 
 
 def test_read_account_bad_token():
@@ -133,7 +134,7 @@ def test_read_account_not_found():
         headers={"X-Token": API_TOKEN}
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Account not found"}
+    assert response.json() == {"detail": "Account 100 not found"}
 
 
 def test_read_accounts():
