@@ -1,28 +1,28 @@
-from fastapi import FastAPI
 import uvicorn
+
+from logging.config import dictConfig
+import logging
+
+
+from fastapi import FastAPI
 from fastapi_pagination import add_pagination
-from starlette.requests import Request
 
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
 from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
+from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
 
 from scout_apm.api import Config
 from scout_apm.async_.starlette import ScoutMiddleware
 
 
-from logging.config import dictConfig
-import logging
-
-
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
 
-
 app = FastAPI(
-    debug=True,
+    debug=DEBUG_REST,
     title='account-management',
     version='0.1',
     docs_url='/_swagger'
@@ -41,7 +41,8 @@ add_pagination(app)
 
 @app.on_event("startup")
 async def startup():
-    logger.info(f'Application started')
+    logger.info(f'Application started with debugging: {DEBUG_LOGGER_LEVEL} and debugging rest: {DEBUG_REST}')
+
     if len(API_TOKEN) == 0:
         logger.error(f'Missing API_TOKEN in your env variables')
     if len(TWO_FA) == 0:
@@ -57,23 +58,6 @@ async def startup():
 async def root():
     return {'msg': 'Hello my friend !'}
 
-
-#@app.exception_handler(StarletteHTTPException)
-#async def custom_http_exception_handler(request, exc):
-#    logger.error(f"OMG! An HTTP error!: {repr(exc)}")
-#    return await http_exception_handler(request, exc)
-
-
-@app.exception_handler(Exception)
-async def debug_exception_handler(request: Request, exc: Exception):
-    import traceback
-    response = "".join(
-            traceback.format_exception(
-                etype=type(exc),
-                value=exc,
-                tb=exc.__traceback__))
-    logger.error(f"OMG! An HTTP error!: {repr(exc)} with stack {response}")
-    raise exc
 
 if __name__ == "__main__":
     uvicorn.run(

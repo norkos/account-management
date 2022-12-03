@@ -1,6 +1,5 @@
 pika==1.3.1
 fastapi==0.86.0
-starlette==0.20.4
 aio-pika==8.2.4
 uvicorn==0.20
 asyncio==3.4.3

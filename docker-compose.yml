@@ -23,6 +23,7 @@ services:
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
       ENABLE_EVENTS : 'True'
       DEBUG_LOGGER_LEVEL : 'False'
+      DEBUG_REST : 'True'
     ports:
       - 8080:80 #localhost:Dockerfile
     volumes:

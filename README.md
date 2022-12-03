@@ -18,6 +18,7 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
 #### Data model
 <img src="doc/data.JPG" height="300"></img>
 - Agent e-mail is unique among all Agents from all Accounts
+- Account e-mail is unique among all others Accounts 
 
 ### What is used here?
 - FastAPI
@@ -60,6 +61,7 @@ migrations by logging into `backend` docker image and running `migrate_db.sh`
        - create `AUTH_TOKEN` with token details needed to communicate with RESTAPI
        - create `TWO_FA` with token needed to erase the DB
        - if you want to see debug logs set `DEBUG_LOGGER_LEVEL` into  `True`
+       - if you want FastAPI to be verbose when sending response with code 500 set `DEBUG_REST` into `True`
   - install extensions in Heroku
     - (mandatory) postgres
        - create `ASYNC_DB_URL` in heroku EVN variables

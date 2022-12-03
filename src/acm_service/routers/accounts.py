@@ -72,8 +72,8 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: Ac
 @router.post('', response_model=schemas.AccountWithoutAgents)
 async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    if await database.get_account_by_email(account.email):
-        raise_bad_request('E-mail already used')
+    #if await database.get_account_by_email(account.email):
+    #    raise_bad_request('E-mail already used')
 
     result = await database.create(name=account.name, email=account.email)
     logger.info(f'Account {result.id} was created')

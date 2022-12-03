@@ -17,7 +17,8 @@ def decorate_database(coro):
         try:
             return await coro(*args, **kwargs)
         except BaseException as e:
-            logger.error("DataBase exception %s", e)
+            logger.exception("DataBase exception %s", e)
+            raise e
     return wrapper
 
 
