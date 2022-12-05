@@ -1,0 +1,32 @@
+<html>
+<head>
+    <title>{{ region }} consumer</title>
+</head>
+<body>
+    <h1>Billing system for the <b>{{ region }}</b> region</h1>
+    <div>Recently created accounts:</div>
+    <ul>
+        {% for account in created_accounts %}
+            <li>{{account}}</li>
+        {% endfor %}
+    </ul>
+    <div>Recently deleted accounts:</div>
+    <ul>
+        {% for account in deleted_accounts %}
+            <li>{{account}}</li>
+        {% endfor %}
+    </ul>
+    <div>Recently created agents:</div>
+    <ul>
+        {% for agent in created_agents %}
+            <li>{{agent}}</li>
+        {% endfor %}
+    </ul>
+    <div>Recently deleted agents:</div>
+    <ul>
+        {% for agent in deleted_agents %}
+            <li>{{agent}}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

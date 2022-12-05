@@ -56,8 +56,8 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_acc
     if await database.get(account_id) is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(account_id)
-    await rabbit_producer.async_publish('delete_account', account_id)
 
+    await rabbit_producer.delete_account(account_id)
     logger.info(f'Account {account_id} was deleted')
 
 
@@ -65,18 +65,19 @@ async def delete_account(account_id: str, database: AccountDAL = Depends(get_acc
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AccountDAL = Depends(get_account_dal),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await database.delete_all()
-    await rabbit_producer.async_publish('delete_account', 'all')
+
+    await rabbit_producer.delete_account('*')
     logger.info(f'All accounts were deleted')
 
 
 @router.post('', response_model=schemas.AccountWithoutAgents)
 async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    #if await database.get_account_by_email(account.email):
-    #    raise_bad_request('E-mail already used')
+    if await database.get_account_by_email(account.email):
+        raise_bad_request('E-mail already used')
 
     result = await database.create(name=account.name, email=account.email)
     logger.info(f'Account {result.id} was created')
 
-    await rabbit_producer.async_publish('create_account', result.id)
+    await rabbit_producer.create_account(result.id)
     return result

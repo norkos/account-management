@@ -51,6 +51,18 @@ class RabbitProducerStub(RabbitProducer):
     async def async_publish(self, method, body) -> None:
         pass
 
+    async def create_agent(self, agent_uuid: str) -> None:
+        pass
+
+    async def delete_agent(self, agent_uuid: str) -> None:
+        pass
+
+    async def create_account(self, account_uuid: str) -> None:
+        pass
+
+    async def delete_account(self, account_uuid: str) -> None:
+        pass
+
 
 class AccountDALStub(AccountDAL):
     class SessionStub(Session):
@@ -89,6 +101,10 @@ class AccountDALStub(AccountDAL):
         self._accounts_by_uuid[new_account.id] = new_account
         self._accounts_by_mail[new_account.email] = new_account
         return new_account
+
+    async def delete_all(self):
+        self._accounts_by_uuid = {}
+        self._accounts_by_mail = {}
 
 
 class AgentDALStub(AgentDAL):
@@ -135,3 +151,7 @@ class AgentDALStub(AgentDAL):
         self._agents_by_uuid[new_agent.id] = new_agent
         self._agents_by_mail[new_agent.email] = new_agent
         return new_agent
+
+    async def delete_all(self):
+        self._agents_by_uuid = {}
+        self._agents_by_mail = {}

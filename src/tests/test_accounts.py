@@ -39,13 +39,13 @@ def create_account(name: str, email: str) -> Response:
     )
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_create_account(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'create_account', autospec=True)
+def test_create_account(mocked_method):
     name = 'my_name'
     mail = 'test@mail.com'
 
     response = create_account(name, mail)
-    mock_async_publish.assert_called_once_with(ANY, method="create_account", body=response.json()['id'])
+    mocked_method.assert_called_once_with(ANY, account_uuid=response.json()['id'])
 
     assert response.status_code == 200
     assert response.json()['name'] == name
@@ -92,8 +92,8 @@ def test_read_account():
     }
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_delete_account(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
+def test_delete_account(mocked_method):
     name = 'my_name'
     mail = 'test@mail.com'
     create_response = create_account(name, mail)
@@ -104,7 +104,7 @@ def test_delete_account(mock_async_publish):
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
-    mock_async_publish.assert_called_with(ANY, method="delete_account", body=create_response.json()["id"])
+    mocked_method.assert_called_with(ANY, account_uuid=create_response.json()["id"])
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -160,8 +160,8 @@ def test_read_accounts_bad_token():
     assert response.json() == {"detail": "Invalid X-Token header"}
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_can_remove_all_accounts(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
+def test_can_remove_all_accounts(mocked_method):
     create_account('my_name', 'my_mail1@mail.com')
     create_account('my_name', 'my_mail2@mail.com')
 
@@ -170,7 +170,7 @@ def test_can_remove_all_accounts(mock_async_publish):
         headers={"X-Token": API_TOKEN,
                  "TWO-FA": TWO_FA}
     )
-    mock_async_publish.assert_called_with(ANY, method="delete_account", body='all')
+    mocked_method.assert_called_with(ANY, account_uuid='*')
 
     assert response.status_code == 202
 

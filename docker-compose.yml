@@ -25,21 +25,48 @@ services:
       DEBUG_LOGGER_LEVEL : 'False'
       DEBUG_REST : 'True'
     ports:
-      - 8080:80 #localhost:Dockerfile
+      - '8080:80' #localhost:Dockerfile
     volumes:
       - .:/app
     networks:
       - network
 
-  consumer:
+  emea_billing_service:
     build:
-      context: consumer
+      context: billing_service
       dockerfile: Dockerfile
     environment:
       PORT: 70
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+      REGION: 'emea'
     ports:
-      - 8090:70 #localhost:Dockerfile
+      - '8070:70' #localhost:Dockerfile
+    networks:
+      - network
+
+  nam_billing_service:
+    build:
+      context: billing_service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 70
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+      REGION: 'nam'
+    ports:
+      - '8071:70' #localhost:Dockerfile
+    networks:
+      - network
+
+  apac_billing_service:
+    build:
+      context: billing_service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 70
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+      REGION: 'apac'
+    ports:
+      - '8072:70' #localhost:Dockerfile
     networks:
       - network
 

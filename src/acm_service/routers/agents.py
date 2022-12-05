@@ -62,7 +62,7 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
     result = await database.create(name=agent.name, email=agent.email, account_id=account_id)
     logger.info(f'Agent {result.id} was created')
 
-    await rabbit_producer.async_publish('create_agent', result.id)
+    await rabbit_producer.create_agent(result.id)
     return result
 
 
@@ -70,7 +70,7 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AgentDAL = Depends(get_agent_dal),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await database.delete_all()
-    await rabbit_producer.async_publish('delete_agent', 'all')
+    await rabbit_producer.delete_agent('*')
     logger.info(f'All agents were deleted')
 
 
@@ -80,7 +80,8 @@ async def delete_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal
     if await database.get(agent_id) is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(agent_id)
-    await rabbit_producer.async_publish('delete_agent', agent_id)
+
+    await rabbit_producer.delete_agent(agent_id)
     logger.info(f'Agent {agent_id} was deleted')
 
 

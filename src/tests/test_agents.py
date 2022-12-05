@@ -41,14 +41,14 @@ def create_agent(account_uuid: str, name: str, email: str) -> Response:
     )
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_create_agent(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'create_agent', autospec=True)
+def test_create_agent(mocked_method):
     parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
 
     response = create_agent(parent_uuid, name, mail)
-    mock_async_publish.assert_called_once_with(ANY, method="create_agent", body=response.json()['id'])
+    mocked_method.assert_called_once_with(ANY, agent_uuid=response.json()['id'])
 
     assert response.status_code == 200
     assert response.json()['name'] == name
@@ -101,8 +101,8 @@ def test_read_agent():
     }
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_delete_agent(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'delete_agent', autospec=True)
+def test_delete_agent(mocked_method):
     parent_uuid = localDb.create_random_parent()
     name = 'my_name'
     mail = 'test@mail.com'
@@ -113,7 +113,7 @@ def test_delete_agent(mock_async_publish):
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
-    mock_async_publish.assert_called_with(ANY, method="delete_agent", body=create_response.json()["id"])
+    mocked_method.assert_called_with(ANY, agent_uuid=create_response.json()["id"])
 
     read_response = client.get(
         f'/accounts/{parent_uuid}/agents/{create_response.json()["id"]}',
@@ -162,8 +162,8 @@ def test_read_agents():
     assert len(response.json()['items']) == how_many
 
 
-@mock.patch.object(RabbitProducerStub, 'async_publish', autospec=True)
-def test_can_remove_all_agents(mock_async_publish):
+@mock.patch.object(RabbitProducerStub, 'delete_agent', autospec=True)
+def test_can_remove_all_agents(mocked_method):
     parent_uuid = localDb.create_random_parent()
     create_agent(parent_uuid, 'my_name', 'my_mail1@mail.com')
     create_agent(parent_uuid, 'my_name', 'my_mail2@mail.com')
@@ -173,7 +173,7 @@ def test_can_remove_all_agents(mock_async_publish):
         headers={"X-Token": API_TOKEN,
                  "TWO-FA": TWO_FA}
     )
-    mock_async_publish.assert_called_with(ANY, method="delete_agent", body='all')
+    mocked_method.assert_called_with(ANY, agent_uuid='*')
 
     assert response.status_code == 202
 

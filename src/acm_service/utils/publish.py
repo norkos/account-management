@@ -1,6 +1,8 @@
 import asyncio
 import json
 import aio_pika
+from aio_pika import ExchangeType, Message, DeliveryMode, connect_robust, connect
+
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
@@ -33,7 +35,7 @@ class RabbitProducer:
 
     @decorate_event
     async def async_publish(self, method, body) -> None:
-        connection = await aio_pika.connect_robust(self._url)
+        connection = await connect_robust(self._url)
         async with connection:
             channel = await connection.channel()
             await channel.default_exchange.publish(
@@ -43,6 +45,58 @@ class RabbitProducer:
                 routing_key='main'
             )
             logger.info(f'Sending the event to queue: {body}')
+
+    @decorate_event
+    async def create_agent(self, agent_uuid) -> None:
+        routing_key = 'create.agent.emea'
+        exchange_name = 'topic_customers'
+
+        connection = await connect(self._url)
+        async with connection:
+            channel = await connection.channel()
+            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+            message = Message(json.dumps(agent_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            await exchange.publish(message, routing_key=routing_key)
+            logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
+
+    @decorate_event
+    async def delete_agent(self, agent_uuid) -> None:
+        routing_key = 'delete.agent.emea'
+        exchange_name = 'topic_customers'
+
+        connection = await connect(self._url)
+        async with connection:
+            channel = await connection.channel()
+            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+            message = Message(json.dumps(agent_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            await exchange.publish(message, routing_key=routing_key)
+            logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
+
+    @decorate_event
+    async def create_account(self, account_uuid):
+        routing_key = 'create.account.emea'
+        exchange_name = 'topic_customers'
+
+        connection = await connect(self._url)
+        async with connection:
+            channel = await connection.channel()
+            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+            message = Message(json.dumps(account_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            await exchange.publish(message, routing_key=routing_key)
+            logger.info(f'Sending the event with body={account_uuid} to routing key={routing_key}')
+
+    @decorate_event
+    async def delete_account(self, account_uuid):
+        routing_key = 'delete.account.emea'
+        exchange_name = 'topic_customers'
+
+        connection = await connect(self._url)
+        async with connection:
+            channel = await connection.channel()
+            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+            message = Message(json.dumps(account_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            await exchange.publish(message, routing_key=routing_key)
+            logger.info(f'Sending the event with body={account_uuid} to routing key={routing_key}')
 
 
 class LocalRabbitProducer(RabbitProducer):
