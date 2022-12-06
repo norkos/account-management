@@ -47,8 +47,8 @@ class RabbitProducer:
             logger.info(f'Sending the event to queue: {body}')
 
     @decorate_event
-    async def create_agent(self, agent_uuid) -> None:
-        routing_key = 'create.agent.emea'
+    async def create_agent(self, region: str, agent_uuid: str) -> None:
+        routing_key = f'create.agent.{region}'
         exchange_name = 'topic_customers'
 
         connection = await connect(self._url)
@@ -60,8 +60,8 @@ class RabbitProducer:
             logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
 
     @decorate_event
-    async def delete_agent(self, agent_uuid) -> None:
-        routing_key = 'delete.agent.emea'
+    async def delete_agent(self, region: str, agent_uuid: str) -> None:
+        routing_key = f'delete.agent.{region}'
         exchange_name = 'topic_customers'
 
         connection = await connect(self._url)

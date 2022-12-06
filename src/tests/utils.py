@@ -29,14 +29,7 @@ class LocalDB:
 
 
 class AgentDB(LocalDB):
-    def create_random_parent(self) -> str:
-        raw_account = {
-            'name': 'dummy_name',
-            'email': 'dummy_mail@wp.pl',
-            'id': str(uuid4())
-        }
-        account = AccountWithoutAgents.parse_obj(raw_account)
-        return str(account.id)
+    pass
 
 
 class AccountDB(LocalDB):
@@ -51,10 +44,10 @@ class RabbitProducerStub(RabbitProducer):
     async def async_publish(self, method, body) -> None:
         pass
 
-    async def create_agent(self, agent_uuid: str) -> None:
+    async def create_agent(self, region: str, agent_uuid: str) -> None:
         pass
 
-    async def delete_agent(self, agent_uuid: str) -> None:
+    async def delete_agent(self, region: str, agent_uuid: str) -> None:
         pass
 
     async def create_account(self, region: str, account_uuid: str) -> None:
@@ -72,6 +65,12 @@ class AccountDALStub(AccountDAL):
         super().__init__(self.SessionStub())
         self._accounts_by_uuid = local_db.entity_by_uuid
         self._accounts_by_mail = local_db.entity_by_mail
+
+    def create_random(self) -> Account:
+        new_account = Account(id=str(uuid4()), name='dummy_name', email='dummy_mail@wp.pl', region='emea')
+        self._accounts_by_uuid[new_account.id] = new_account
+        self._accounts_by_mail[new_account.email] = new_account
+        return new_account
 
     async def create(self, **kwargs) -> Account:
         new_account = Account(id=str(uuid4()), **kwargs)

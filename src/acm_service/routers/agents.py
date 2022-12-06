@@ -8,14 +8,14 @@ from fastapi_pagination import paginate
 
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header
+from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header, \
+    get_account_dal
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.publish import RabbitProducer
 from acm_service.utils.pagination import Page
 
 logger = logging.getLogger(DEFAULT_LOGGER)
-
 
 router = APIRouter(
     tags=["agents"],
@@ -54,15 +54,18 @@ async def read_agents(database: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
-async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL = Depends(get_agent_dal),
+async def create_agent(account_id: str, agent: AgentCreate, agent_database: AgentDAL = Depends(get_agent_dal),
+                       accounts: AgentDAL = Depends(get_account_dal),
                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    if await database.get_agent_by_email(agent.email):
+    if await agent_database.get_agent_by_email(agent.email):
         raise_bad_request(f'E-mail {agent.email} is already used')
 
-    result = await database.create(name=agent.name, email=agent.email, account_id=account_id)
+    result = await agent_database.create(name=agent.name, email=agent.email, account_id=account_id)
     logger.info(f'Agent {result.id} was created')
 
-    await rabbit_producer.create_agent(result.id)
+    account = await accounts.get(account_id)
+
+    await rabbit_producer.create_agent(region=account.region, agent_uuid=result.id)
     return result
 
 
@@ -70,24 +73,32 @@ async def create_agent(account_id: str, agent: AgentCreate, database: AgentDAL =
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AgentDAL = Depends(get_agent_dal),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await database.delete_all()
-    await rabbit_producer.delete_agent('*')
+    await rabbit_producer.delete_agent('*', '*')
     logger.info(f'All agents were deleted')
 
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_agent(agent_id: str, database: AgentDAL = Depends(get_agent_dal),
+async def delete_agent(account_id: str, agent_id: str, database: AgentDAL = Depends(get_agent_dal),
+                       accounts: AgentDAL = Depends(get_account_dal),
                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    if await database.get(agent_id) is None:
+    agent = await database.get(agent_id)
+    account = await accounts.get(account_id)
+
+    if agent is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    if account is None or account.id != agent.account_id:
+        logger.info(f'Trying to remove agent {agent_id} from the account f{account_id} but they are not linked.')
+        return Response(status_code=status.HTTP_400_BAD_REQUEST)
+
     await database.delete(agent_id)
 
-    await rabbit_producer.delete_agent(agent_id)
+    await rabbit_producer.delete_agent(region=account.region, agent_uuid=agent_id)
     logger.info(f'Agent {agent_id} was deleted')
 
 
-#@router.put('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
+# @router.put('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
 async def update_agent(agent_id: str, agent: AgentCreate,
                        database: AgentDAL = Depends(get_agent_dal)):
     result = await database.update(agent_id, **agent.dict())
     return result
-
