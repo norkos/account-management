@@ -11,17 +11,18 @@ from main import app
 from acm_service.utils.env import API_TOKEN, TWO_FA
 from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_account_dal
 
-from .utils import AgentDB, AgentDALStub, RabbitProducerStub, AccountDALStub
+from .utils import AgentDB, AccountDB, AgentDALStub, RabbitProducerStub, AccountDALStub
 
 client = TestClient(app)
-localDb = AgentDB()
+agent_db = AgentDB()
+account_db = AccountDB()
+account_dal = AccountDALStub(account_db)
 
 
 def override_agent_dal():
-    return AgentDALStub(localDb)
+    return AgentDALStub(agent_db)
 
 
-account_dal = AccountDALStub(localDb)
 def override_account_dal():
     return account_dal
 
@@ -37,7 +38,8 @@ app.dependency_overrides[get_rabbit_producer] = override_get_rabbit_producer
 
 @pytest.fixture(autouse=True)
 def run_before_and_after_tests(tmpdir):
-    localDb.reset()
+    agent_db.reset()
+    account_db.reset()
 
 
 def create_agent(account_uuid: str, name: str, email: str) -> Response:
@@ -102,7 +104,7 @@ def test_read_agent():
     assert read_response.status_code == 200
     assert read_response.json() == {
         'id': create_response.json()['id'],
-        'name':  name,
+        'name': name,
         'email': mail,
         'account_id': account.id
     }
