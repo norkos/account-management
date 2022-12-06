@@ -31,11 +31,11 @@ def run_before_and_after_tests(tmpdir):
     localDb.reset()
 
 
-def create_account(name: str, email: str) -> Response:
+def create_account(name: str, email: str, region: str = 'nam') -> Response:
     return client.post(
         '/accounts',
         headers={"X-Token": API_TOKEN},
-        json={'name': name, 'email': email}
+        json={'name': name, 'email': email, 'region': region}
     )
 
 
@@ -43,13 +43,15 @@ def create_account(name: str, email: str) -> Response:
 def test_create_account(mocked_method):
     name = 'my_name'
     mail = 'test@mail.com'
+    region = 'emea'
 
-    response = create_account(name, mail)
-    mocked_method.assert_called_once_with(ANY, account_uuid=response.json()['id'])
+    response = create_account(name, mail, region)
+    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=response.json()['id'])
 
     assert response.status_code == 200
     assert response.json()['name'] == name
     assert response.json()['email'] == mail
+    assert response.json()['region'] == region
 
 
 def test_create_account_duplicated_mail():
@@ -78,7 +80,8 @@ def test_create_accounts_bad_token():
 def test_read_account():
     name = 'my_name'
     mail = 'test@mail.com'
-    create_response = create_account(name, mail)
+    region = 'emea'
+    create_response = create_account(name, mail, region)
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -89,6 +92,7 @@ def test_read_account():
         'id': create_response.json()['id'],
         'name':  name,
         'email': mail,
+        'region': region
     }
 
 
@@ -96,7 +100,8 @@ def test_read_account():
 def test_delete_account(mocked_method):
     name = 'my_name'
     mail = 'test@mail.com'
-    create_response = create_account(name, mail)
+    region = 'emea'
+    create_response = create_account(name, mail, region)
 
     account_id = create_response.json()["id"]
     delete_response = client.delete(
@@ -104,7 +109,7 @@ def test_delete_account(mocked_method):
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
-    mocked_method.assert_called_with(ANY, account_uuid=create_response.json()["id"])
+    mocked_method.assert_called_with(ANY, region=region, account_uuid=create_response.json()["id"])
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -170,7 +175,7 @@ def test_can_remove_all_accounts(mocked_method):
         headers={"X-Token": API_TOKEN,
                  "TWO-FA": TWO_FA}
     )
-    mocked_method.assert_called_with(ANY, account_uuid='*')
+    mocked_method.assert_called_with(ANY, region='*', account_uuid='*')
 
     assert response.status_code == 202
 

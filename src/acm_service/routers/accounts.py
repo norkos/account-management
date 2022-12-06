@@ -53,11 +53,12 @@ async def read_account_with_agents(account_id: str, database: AccountDAL = Depen
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_account(account_id: str, database: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    if await database.get(account_id) is None:
+    account = await database.get(account_id)
+    if account is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await database.delete(account_id)
 
-    await rabbit_producer.delete_account(account_id)
+    await rabbit_producer.delete_account(region=account.region, account_uuid=account_id)
     logger.info(f'Account {account_id} was deleted')
 
 
@@ -66,7 +67,7 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: Ac
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await database.delete_all()
 
-    await rabbit_producer.delete_account('*')
+    await rabbit_producer.delete_account('*', '*')
     logger.info(f'All accounts were deleted')
 
 
@@ -79,5 +80,5 @@ async def create_account(account: schemas.AccountCreate, database: AccountDAL = 
     result = await database.create(name=account.name, email=account.email, region=account.region)
     logger.info(f'Account {result.id} was created')
 
-    await rabbit_producer.create_account(result.id)
+    await rabbit_producer.create_account(region=account.region, account_uuid=result.id)
     return result

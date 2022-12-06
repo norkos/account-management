@@ -73,8 +73,8 @@ class RabbitProducer:
             logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
 
     @decorate_event
-    async def create_account(self, account_uuid):
-        routing_key = 'create.account.emea'
+    async def create_account(self, region: str, account_uuid: str) -> None:
+        routing_key = f'create.account.{region}'
         exchange_name = 'topic_customers'
 
         connection = await connect(self._url)
@@ -86,8 +86,8 @@ class RabbitProducer:
             logger.info(f'Sending the event with body={account_uuid} to routing key={routing_key}')
 
     @decorate_event
-    async def delete_account(self, account_uuid):
-        routing_key = 'delete.account.emea'
+    async def delete_account(self, region: str, account_uuid: str) -> None:
+        routing_key = f'delete.account.{region}'
         exchange_name = 'topic_customers'
 
         connection = await connect(self._url)
