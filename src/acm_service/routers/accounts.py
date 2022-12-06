@@ -76,7 +76,7 @@ async def create_account(account: schemas.AccountCreate, database: AccountDAL = 
     if await database.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 
-    result = await database.create(name=account.name, email=account.email)
+    result = await database.create(name=account.name, email=account.email, region=account.region)
     logger.info(f'Account {result.id} was created')
 
     await rabbit_producer.create_account(result.id)

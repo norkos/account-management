@@ -164,8 +164,8 @@ async def flow_of_the_account(amount_of_agents: int, delete: bool = True) -> Non
 async def async_test_traffic_model():
     #   given
     clean_your_data = False
-    how_many_accounts = 10
-    how_many_agents_per_account = 60
+    how_many_accounts = 5
+    how_many_agents_per_account = 10
 
     # when
     tasks = []

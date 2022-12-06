@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, UUID4
-
+from enum import Enum
 
 class AgentBase(BaseModel):
     name: str
@@ -18,9 +18,16 @@ class Agent(AgentBase):
         orm_mode = True
 
 
+class RegionEnum(str, Enum):
+    emea = 'emea'
+    nam = 'nam'
+    apac = 'apac'
+
+
 class AccountBase(BaseModel):
     name: str
     email: EmailStr
+    region: RegionEnum
 
 
 class AccountCreate(AccountBase):
