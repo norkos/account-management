@@ -28,5 +28,11 @@
             <li>{{agent}}</li>
         {% endfor %}
     </ul>
+    <div>Recently blocked agents:</div>
+    <ul>
+        {% for agent in blocked_agents %}
+            <li>{{agent}}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

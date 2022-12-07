@@ -27,7 +27,8 @@ async def root(request: Request):
                                                      'created_agents': consumer.created_agents(),
                                                      'deleted_agents': consumer.deleted_agents(),
                                                      'created_accounts': consumer.created_accounts(),
-                                                     'deleted_accounts': consumer.deleted_accounts()
+                                                     'deleted_accounts': consumer.deleted_accounts(),
+                                                     'blocked_agents:': consumer.blocked_agents()
                                                      })
 
 

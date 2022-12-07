@@ -9,6 +9,7 @@ from aio_pika import ExchangeType, connect_robust
 
 class Consumer:
     def __init__(self, region: str):
+        self._blocked_agents = set([])
         self._deleted_accounts = []
         self._created_accounts = []
         self._created_agents = []
@@ -27,6 +28,17 @@ class Consumer:
             except Exception:
                 print(f'Waiting for RabbitMQ to be alive. Sleeping {connection_timeout} seconds before retry.')
                 await asyncio.sleep(connection_timeout)
+
+    async def block_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+        async with message.process():
+            print(f'Block agent: {message.body}')
+            self._blocked_agents.add(message.body)
+
+    async def unblock_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+        async with message.process():
+            if message.body in self._blocked_agents:
+                print(f'Unblock agent: {message.body}')
+                self._blocked_agents.remove(message.body)
 
     async def create_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
         async with message.process():
@@ -74,11 +86,22 @@ class Consumer:
         await self.consume(loop,
                            binding_key=f'delete.account.{self._region}', callback=self.delete_account)
 
+    async def consume_block_agent(self, loop) -> None:
+        await self.consume(loop,
+                           binding_key=f'block.agent.{self._region}', callback=self.block_agent)
+
+    async def consume_unblock_agent(self, loop) -> None:
+        await self.consume(loop,
+                           binding_key=f'unblock.agent.{self._region}', callback=self.unblock_agent)
+
     def created_agents(self) -> [str]:
         return self._created_agents
 
     def deleted_agents(self) -> [str]:
         return self._deleted_agents
+    
+    def blocked_agents(self) -> [str]:
+        return self._blocked_agents
 
     def created_accounts(self) -> [str]:
         return self._created_accounts

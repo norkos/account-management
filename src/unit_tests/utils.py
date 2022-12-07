@@ -19,7 +19,10 @@ class RabbitProducerStub(RabbitProducer):
     def __init__(self):
         super().__init__('')
 
-    async def async_publish(self, method, body) -> None:
+    async def block_agent(self, region: str, agent_uuid: str) -> None:
+        pass
+
+    async def unblock_agent(self, region: str, agent_uuid: str) -> None:
         pass
 
     async def create_agent(self, region: str, agent_uuid: str) -> None:

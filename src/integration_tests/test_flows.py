@@ -108,7 +108,6 @@ def test_create_and_remove_accounts():
 
     try:
         asyncio.run(create_accounts(rest, how_many_accounts))
-        asyncio.run(remove_all_accounts(rest))
     finally:
         asyncio.run(remove_all_accounts(rest))
 

@@ -33,19 +33,29 @@ async def read_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/agents/block_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
-    if await agents.get(agent_id) is None:
+async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+                      accounts: AgentDAL = Depends(get_account_dal),
+                      rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+    agent = await agents.get(agent_id)
+    if agent is None:
         raise_not_found(f'Agent {agent_id} not found')
 
+    region = (await accounts.get(agent.account_id)).region
     await agents.update(agent_id, blocked=True)
+    await rabbit_producer.block_agent(region, agent_id)
 
 
 @router.post('/agents/unblock_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
-    if await agents.get(agent_id) is None:
+async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+                        accounts: AgentDAL = Depends(get_account_dal),
+                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+    agent = await agents.get(agent_id)
+    if agent is None:
         raise_not_found(f'Agent {agent_id} not found')
 
+    region = (await accounts.get(agent.account_id)).region
     await agents.update(agent_id, blocked=False)
+    await rabbit_producer.unblock_agent(region, agent_id)
 
 
 @router.post('/agents/find_agent/{email}', response_model=Agent)
@@ -113,4 +123,3 @@ async def delete_agent(account_id: str, agent_id: str,
 
     await rabbit_producer.delete_agent(region=account.region, agent_uuid=agent_id)
     logger.info(f'Agent {agent_id} was deleted')
-
