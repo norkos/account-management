@@ -16,7 +16,7 @@ class Consumer:
         self._deleted_agents = []
         self._region = region
         self._connection = None
-        self._url = os.environ.get('CLOUDAMQP_URL', '')
+        self._url = os.environ.get('CLOUDAMQP_URL')
 
     async def wait_for_rabbit(self, loop, connection_timeout: int) -> None:
         while True:

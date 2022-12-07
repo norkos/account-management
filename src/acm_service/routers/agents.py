@@ -12,7 +12,7 @@ from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_tok
     get_account_dal
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.utils.publish import RabbitProducer
+from acm_service.utils.events.producer import RabbitProducer
 from acm_service.utils.pagination import Page
 
 logger = logging.getLogger(DEFAULT_LOGGER)

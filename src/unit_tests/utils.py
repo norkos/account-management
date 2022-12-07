@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.sql_app.models import Account, Agent
-from acm_service.utils.publish import RabbitProducer
+from acm_service.utils.events.producer import RabbitProducer
 
 
 def generate_random_mail() -> str:
@@ -77,7 +77,7 @@ class AccountDALStub(AccountDAL):
             del self._accounts_by_uuid[account_uuid]
 
     async def update(self, account_uuid: str, **kwargs):
-        agent = self._agents_by_uuid[account_uuid]
+        agent = self._accounts_by_uuid[account_uuid]
         for k in kwargs.keys():
             agent.__setattr__(k, kwargs[k])
 

@@ -4,7 +4,7 @@ from acm_service.sql_app.database import async_session
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.env import CLOUDAMQP_URL
-from acm_service.utils.publish import RabbitProducer, LocalRabbitProducer
+from acm_service.utils.events.producer import RabbitProducer, LocalRabbitProducer
 from acm_service.utils.env import API_TOKEN, TWO_FA
 from acm_service.utils.http_exceptions import raise_bad_request
 
