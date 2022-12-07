@@ -23,7 +23,7 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 
 app = FastAPI(
     debug=DEBUG_REST,
-    title='account-management',
+    title='account-management-service',
     version='0.1',
     docs_url='/_swagger'
 )

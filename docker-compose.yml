@@ -4,9 +4,7 @@ services:
   rabbitmq:
     image: 'rabbitmq:3.10-management-alpine'
     ports:
-      # The standard AMQP protocol port
       - '5672:5672'
-       # HTTP management UI
       - '15672:15672'
     networks:
       - network
@@ -31,6 +29,18 @@ services:
     networks:
       - network
 
+  compliance_service:
+    build:
+      context: compliance_service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 70
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+    ports:
+      - '8060:70'
+    networks:
+      - network
+
   emea_billing_service:
     build:
       context: billing_service
@@ -40,7 +50,7 @@ services:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       REGION: 'emea'
     ports:
-      - '8070:70' #localhost:Dockerfile
+      - '8070:70'
     networks:
       - network
 
@@ -53,7 +63,7 @@ services:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       REGION: 'nam'
     ports:
-      - '8071:70' #localhost:Dockerfile
+      - '8071:70'
     networks:
       - network
 
@@ -66,7 +76,7 @@ services:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       REGION: 'apac'
     ports:
-      - '8072:70' #localhost:Dockerfile
+      - '8072:70'
     networks:
       - network
 

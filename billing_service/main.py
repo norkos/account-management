@@ -11,7 +11,7 @@ PORT = os.environ.get('PORT', '8070')
 REGION = os.environ.get('REGION', 'emea')
 
 app = FastAPI(
-    title='event-consumer',
+    title=f'{REGION}-billing-service',
     version='0.1',
     docs_url='/_swagger'
 )
