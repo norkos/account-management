@@ -1,11 +1,11 @@
 import asyncio
 import json
-import aio_pika
-from aio_pika import ExchangeType, Message, DeliveryMode, connect_robust, connect
+from aio_pika import ExchangeType, Message, DeliveryMode, connect
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 import logging
+
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
@@ -25,6 +25,7 @@ def decorate_event(coro):
                 await asyncio.sleep(retry * time_out)
         logger.exception('Event was not sent. Exception %s', ex)
         raise Exception('Event was not sent')
+
     return wrapper
 
 
@@ -33,70 +34,46 @@ class RabbitProducer:
     def __init__(self, url: str):
         self._url = url
 
-    @decorate_event
-    async def async_publish(self, method, body) -> None:
-        connection = await connect_robust(self._url)
+    async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
+        exchange_name = 'topic_customers'
+
+        connection = await connect(self._url)
         async with connection:
             channel = await connection.channel()
-            await channel.default_exchange.publish(
-                aio_pika.Message(
-                    body=json.dumps(body).encode()
-                ),
-                routing_key='main'
-            )
-            logger.info(f'Sending the event to queue: {body}')
+            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+            message = Message(json.dumps(entity_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            await exchange.publish(message, routing_key=routing_key)
+            logger.info(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
+
+    @decorate_event
+    async def block_agent(self, region: str, agent_uuid: str) -> None:
+        routing_key = f'block.agent.{region}'
+        return await self._send_customer_event(agent_uuid, routing_key)
+
+    @decorate_event
+    async def unblock_agent(self, region: str, agent_uuid: str) -> None:
+        routing_key = f'unblock.agent.{region}'
+        return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
     async def create_agent(self, region: str, agent_uuid: str) -> None:
         routing_key = f'create.agent.{region}'
-        exchange_name = 'topic_customers'
-
-        connection = await connect(self._url)
-        async with connection:
-            channel = await connection.channel()
-            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(json.dumps(agent_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
-            await exchange.publish(message, routing_key=routing_key)
-            logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
+        return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
     async def delete_agent(self, region: str, agent_uuid: str) -> None:
         routing_key = f'delete.agent.{region}'
-        exchange_name = 'topic_customers'
-
-        connection = await connect(self._url)
-        async with connection:
-            channel = await connection.channel()
-            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(json.dumps(agent_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
-            await exchange.publish(message, routing_key=routing_key)
-            logger.info(f'Sending the event with body={agent_uuid} to routing key={routing_key}')
+        return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
     async def create_account(self, region: str, account_uuid: str) -> None:
         routing_key = f'create.account.{region}'
-        exchange_name = 'topic_customers'
-
-        connection = await connect(self._url)
-        async with connection:
-            channel = await connection.channel()
-            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(json.dumps(account_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
-            await exchange.publish(message, routing_key=routing_key)
-            logger.info(f'Sending the event with body={account_uuid} to routing key={routing_key}')
+        return await self._send_customer_event(account_uuid, routing_key)
 
     @decorate_event
     async def delete_account(self, region: str, account_uuid: str) -> None:
         routing_key = f'delete.account.{region}'
-        exchange_name = 'topic_customers'
-
-        connection = await connect(self._url)
-        async with connection:
-            channel = await connection.channel()
-            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(json.dumps(account_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
-            await exchange.publish(message, routing_key=routing_key)
-            logger.info(f'Sending the event with body={account_uuid} to routing key={routing_key}')
+        return await self._send_customer_event(account_uuid, routing_key)
 
 
 class LocalRabbitProducer(RabbitProducer):
@@ -104,5 +81,5 @@ class LocalRabbitProducer(RabbitProducer):
     def __init__(self):
         super().__init__('')
 
-    async def async_publish(self, method, body) -> None:
-        logger.info(f'Sending the event to queue: {body}')
+    async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
+        logger.info(f'Stubbed. Sending the event with body={entity_uuid} to routing key={routing_key}')

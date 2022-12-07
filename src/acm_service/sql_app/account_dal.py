@@ -73,7 +73,6 @@ class AccountDAL:
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
         await self._session.flush()
-        return await self.get(uuid)
 
     @decorate_database
     async def close(self):

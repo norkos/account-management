@@ -26,14 +26,13 @@ router = APIRouter(
 
 
 @router.get('', response_model=Page[schemas.AccountWithoutAgents])
-async def read_accounts(database: AccountDAL = Depends(get_account_dal)):
-    return paginate(await database.get_all())
+async def read_accounts(accounts: AccountDAL = Depends(get_account_dal)):
+    return paginate(await accounts.get_all())
 
 
 @router.get('/{account_id}', response_model=schemas.AccountWithoutAgents)
-async def read_account(account_id: str, database: AccountDAL = Depends(get_account_dal)):
-    db_account = await database.get(account_id)
-
+async def read_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
+    db_account = await accounts.get(account_id)
     if db_account is None:
         raise_not_found(f'Account {account_id} not found')
 
@@ -41,9 +40,8 @@ async def read_account(account_id: str, database: AccountDAL = Depends(get_accou
 
 
 @router.post('/generate_company_raport/{account_id}', response_model=schemas.Account)
-async def read_account_with_agents(account_id: str, database: AccountDAL = Depends(get_account_dal)):
-    db_account = await database.get_with_agents(account_id)
-
+async def read_account_with_agents(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
+    db_account = await accounts.get_with_agents(account_id)
     if db_account is None:
         raise_not_found(f'Account {account_id} not found')
 
@@ -51,33 +49,33 @@ async def read_account_with_agents(account_id: str, database: AccountDAL = Depen
 
 
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_account(account_id: str, database: AccountDAL = Depends(get_account_dal),
+async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    account = await database.get(account_id)
+    account = await accounts.get(account_id)
     if account is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    await database.delete(account_id)
+    await accounts.delete(account_id)
 
     await rabbit_producer.delete_account(region=account.region, account_uuid=account_id)
     logger.info(f'Account {account_id} was deleted')
 
 
 @router.post('/clear', status_code=status.HTTP_202_ACCEPTED)
-async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), database: AccountDAL = Depends(get_account_dal),
+async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: AccountDAL = Depends(get_account_dal),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    await database.delete_all()
-
+    await accounts.delete_all()
     await rabbit_producer.delete_account('*', '*')
     logger.info(f'All accounts were deleted')
 
 
 @router.post('', response_model=schemas.AccountWithoutAgents)
-async def create_account(account: schemas.AccountCreate, database: AccountDAL = Depends(get_account_dal),
+async def create_account(account: schemas.AccountCreate,
+                         accounts: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    if await database.get_account_by_email(account.email):
+    if await accounts.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 
-    result = await database.create(name=account.name, email=account.email, region=account.region)
+    result = await accounts.create(name=account.name, email=account.email, region=account.region)
     logger.info(f'Account {result.id} was created')
 
     await rabbit_producer.create_account(region=account.region, account_uuid=result.id)

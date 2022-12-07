@@ -33,7 +33,6 @@ class AgentDAL:
         new_agent = Agent(id=str(uuid4()), **kwargs)
         self._session.add(new_agent)
         await self._session.commit()
-
         return new_agent
 
     @decorate_database
@@ -70,13 +69,8 @@ class AgentDAL:
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
         await self._session.flush()
-        return await self.get(uuid)
 
     @decorate_database
     async def close(self):
         if self._session and self._session.is_active:
             await self._session.close()
-
-
-
-

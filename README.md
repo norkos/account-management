@@ -4,7 +4,7 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ### User stories
 
-1.  As a customer I'd like to use account-management-service REST API to create the frontend (DONE)
+1. As a customer I'd like to use account-management-service REST API to create the frontend (DONE)
 2. As a billing team I'd like to be updated regarding both Accounts and Agents, so I can calculate invoices (DONE)
 3. As a compliance office I'd like to be able to block Agent if agent account is hacked, so agent won't be charged to the extra usage (TO DO)
 4. As a Success Manager I'd like to be informed about creating and removing VIP accounts, so I can calculate key customer turnover (TO DO)
@@ -26,10 +26,13 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
 - Postgres
   - asyncio
   - alembic 
-- pydantic and types
+- pydantic
+- types
+- pytest
+  - fixtures
 - decorators
-- event handling implemented by RabbitMQ used in an async way
-  - under `consumer` you might find async consumer
+- event handling implemented by RabbitMQ used in an async way using Topics and Direct Exchange
+  - under `billing_service` you might find async consumer for Topics
 - Docker to make a smart environment: 
   - you can have your own e2e environment locally, 
   - or run the project with PyCharm with `main.py`, 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, Boolean
 from acm_service.sql_app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -9,6 +9,7 @@ class Agent(Base):
     id = Column(String, primary_key=True, index=True)
     email = Column(String, unique=True)
     name = Column(String, index=False)
+    blocked = Column(Boolean, default=False, nullable=False)
 
     account_id = Column(String, ForeignKey('accounts.id', ondelete='CASCADE'), nullable=False)
 
