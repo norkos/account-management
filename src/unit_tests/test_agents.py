@@ -6,7 +6,7 @@ from unittest.mock import ANY
 from requests import Response
 
 from acm_service.utils.env import API_TOKEN, TWO_FA
-from acm_service.sql_app.models import Account
+from acm_service.sql_app.schemas import Agent, Account
 
 from unit_tests.utils import RabbitProducerStub, generate_random_mail
 from unit_tests.sut import client, reset_database, account_dal
@@ -20,6 +20,15 @@ def run_before_and_after_tests(tmpdir):
 @pytest.fixture
 def account() -> Account:
     return account_dal.create_random()
+
+
+def get_agent(account_uuid: str, agent_uuid: str) -> Agent:
+    response = client.get(
+        f'/accounts/{account_uuid}/agents/{agent_uuid}',
+        headers={"X-Token": API_TOKEN}
+    )
+    data = response.json()
+    return Agent(**data)
 
 
 def create_agent(account_uuid: str, name: str = 'dummy', email: str = None, token: str = API_TOKEN) -> Response:
@@ -52,7 +61,8 @@ def test_create_account_duplicated_mail(account):
     assert response.json() == {'detail': f'E-mail {duplicate_mail} is already used'}
 
 
-def test_block_unblock_agent(account):
+@mock.patch.object(RabbitProducerStub, 'block_agent', autospec=True)
+def test_block_agent(block_agent, account):
     response = create_agent(account.id)
     agent_uuid = response.json()['id']
     is_blocked = response.json()['blocked']
@@ -65,28 +75,32 @@ def test_block_unblock_agent(account):
         f'/agents/block_agent/{agent_uuid}',
         headers={"X-Token": API_TOKEN}
     )
+    block_agent.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
 
-    response = client.get(
-        f'/accounts/{account.id}/agents/{agent_uuid}',
+    agent = get_agent(account.id, agent_uuid)
+    assert agent.blocked
+
+
+@mock.patch.object(RabbitProducerStub, 'unblock_agent', autospec=True)
+def test_unblock_agent(unblock_method, account):
+    response = create_agent(account.id)
+    agent_uuid = response.json()['id']
+    client.post(
+        f'/agents/block_agent/{agent_uuid}',
         headers={"X-Token": API_TOKEN}
     )
-    is_blocked = response.json()['blocked']
-    assert is_blocked is True
 
     #  when unblocking
     response = client.post(
         f'/agents/unblock_agent/{agent_uuid}',
         headers={"X-Token": API_TOKEN}
     )
+    unblock_method.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
 
-    response = client.get(
-        f'/accounts/{account.id}/agents/{agent_uuid}',
-        headers={"X-Token": API_TOKEN}
-    )
-    is_blocked = response.json()['blocked']
-    assert is_blocked is False
+    agent = get_agent(account.id, agent_uuid)
+    assert not agent.blocked
 
 
 def test_create_account_invalid_mail(account):

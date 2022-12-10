@@ -11,7 +11,7 @@ PORT = os.environ.get('PORT', '8070')
 REGION = os.environ.get('REGION', 'emea')
 
 app = FastAPI(
-    title='event-consumer',
+    title=f'{REGION}-billing-service',
     version='0.1',
     docs_url='/_swagger'
 )
@@ -26,8 +26,9 @@ async def root(request: Request):
                                                      'region': REGION,
                                                      'created_agents': consumer.created_agents(),
                                                      'deleted_agents': consumer.deleted_agents(),
+                                                     'blocked_agents': consumer.blocked_agents(),
                                                      'created_accounts': consumer.created_accounts(),
-                                                     'deleted_accounts': consumer.deleted_accounts()
+                                                     'deleted_accounts': consumer.deleted_accounts(),
                                                      })
 
 
@@ -41,6 +42,9 @@ async def startup():
 
     await consumer.consume_create_account(loop)
     await consumer.consume_delete_account(loop)
+
+    await consumer.consume_block_agent(loop)
+    await consumer.consume_unblock_agent(loop)
 
 
 @app.on_event("shutdown")

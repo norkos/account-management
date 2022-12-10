@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from fastapi import Depends
@@ -6,14 +7,18 @@ import logging
 
 from fastapi_pagination import paginate
 
+
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
 from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header, \
     get_account_dal
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.utils.publish import RabbitProducer
+from acm_service.utils.events.producer import RabbitProducer
 from acm_service.utils.pagination import Page
+from acm_service.controllers.agent_controller import AgentController
+from acm_service.sql_app.account_dal import AccountDAL
+from acm_service.sql_app.database import async_session
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -21,6 +26,19 @@ router = APIRouter(
     tags=["agents"],
     dependencies=[Depends(get_token_header)]
 )
+
+
+@router.post('/agents/stubber/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
+async def stubber(agent_id: str):
+    byte = json.dumps(agent_id).encode('utf-8')
+    uuid = byte.decode('utf-8')
+    async with async_session() as session:
+        async with session.begin():
+            agents = AgentDAL(session)
+            accounts = AccountDAL(session)
+            controller = AgentController(agents, accounts, get_rabbit_producer())
+            result = await controller.block_agent(uuid)
+            logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
 
 @router.get('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
@@ -33,19 +51,23 @@ async def read_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/agents/block_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
-    if await agents.get(agent_id) is None:
-        raise_not_found(f'Agent {agent_id} not found')
+async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+                      accounts: AccountDAL = Depends(get_account_dal),
+                      rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+    result = await AgentController(agents, accounts, rabbit_producer).block_agent(agent_id)
 
-    await agents.update(agent_id, blocked=True)
+    if not result:
+        raise_not_found(f'Agent {agent_id} not found')
 
 
 @router.post('/agents/unblock_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
-    if await agents.get(agent_id) is None:
-        raise_not_found(f'Agent {agent_id} not found')
+async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+                        accounts: AccountDAL = Depends(get_account_dal),
+                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+    result = await AgentController(agents, accounts, rabbit_producer).unblock_agent(agent_id)
 
-    await agents.update(agent_id, blocked=False)
+    if not result:
+        raise_not_found(f'Agent {agent_id} not found')
 
 
 @router.post('/agents/find_agent/{email}', response_model=Agent)
@@ -113,4 +135,3 @@ async def delete_agent(account_id: str, agent_id: str,
 
     await rabbit_producer.delete_agent(region=account.region, agent_uuid=agent_id)
     logger.info(f'Agent {agent_id} was deleted')
-

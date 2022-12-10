@@ -55,6 +55,7 @@ class AgentDAL:
         query = await self._session.execute(select(Agent).where(Agent.account_id == uuid).order_by(Agent.name))
         return query.scalars().all()
 
+    @decorate_database
     async def delete(self, uuid: str):
         await self._session.execute(delete(Agent).where(Agent.id == uuid))
         await self._session.commit()

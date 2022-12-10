@@ -103,12 +103,11 @@ def test_block_and_unblock_agent():
 
 def test_create_and_remove_accounts():
     # given
-    how_many_accounts = 10
+    how_many_accounts = 5
     rest = RestClient(api_token=TOKEN, api_url=URL)
 
     try:
         asyncio.run(create_accounts(rest, how_many_accounts))
-        asyncio.run(remove_all_accounts(rest))
     finally:
         asyncio.run(remove_all_accounts(rest))
 
@@ -116,8 +115,8 @@ def test_create_and_remove_accounts():
 def test_create_account_with_agents():
     # given
     rest = RestClient(api_token=TOKEN, api_url=URL)
-    how_many_accounts = 5
-    how_many_agents_per_account = 10
+    how_many_accounts = 3
+    how_many_agents_per_account = 5
 
     try:
         asyncio.run(_test_create_account_with_agents(rest, how_many_accounts, how_many_agents_per_account))

@@ -1,5 +1,4 @@
 import asyncio
-import json
 from aio_pika import ExchangeType, Message, DeliveryMode, connect
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
@@ -41,7 +40,7 @@ class RabbitProducer:
         async with connection:
             channel = await connection.channel()
             exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(json.dumps(entity_uuid).encode(), delivery_mode=DeliveryMode.PERSISTENT)
+            message = Message(entity_uuid.encode('utf-8'), delivery_mode=DeliveryMode.PERSISTENT)
             await exchange.publish(message, routing_key=routing_key)
             logger.info(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
 

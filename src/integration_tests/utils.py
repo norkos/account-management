@@ -1,4 +1,6 @@
 import json
+import random
+
 import aiohttp
 import namegenerator
 import names
@@ -61,7 +63,8 @@ class RestClient:
             response = await session.get(f'{self._url}/accounts')
             return (await response.json())['items']
 
-    async def create_account(self, name: str, email: str) -> str | None:
+    async def create_account(self, name: str, email: str, region: str = None) -> str | None:
+        regions = ['nam', 'emea', 'apac']
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token,
                                           'accept': 'application/json',
@@ -70,7 +73,7 @@ class RestClient:
             response = await session.post(f'{self._url}/accounts', data=json.dumps({
                 'name': name,
                 'email': email,
-                'region': 'nam'}))
+                'region': region if region else random.choice(regions)}))
 
             response_status_code = response.status.real
 

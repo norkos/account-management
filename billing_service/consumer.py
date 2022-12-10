@@ -7,15 +7,19 @@ import asyncio
 from aio_pika import ExchangeType, connect_robust
 
 
+def decode(message: aio_pika.abc.AbstractIncomingMessage) -> str:
+    return message.body.decode('utf-8')
+
 class Consumer:
     def __init__(self, region: str):
+        self._blocked_agents = set([])
         self._deleted_accounts = []
         self._created_accounts = []
         self._created_agents = []
         self._deleted_agents = []
         self._region = region
         self._connection = None
-        self._url = os.environ.get('CLOUDAMQP_URL', '')
+        self._url = os.environ.get('CLOUDAMQP_URL')
 
     async def wait_for_rabbit(self, loop, connection_timeout: int) -> None:
         while True:
@@ -28,25 +32,42 @@ class Consumer:
                 print(f'Waiting for RabbitMQ to be alive. Sleeping {connection_timeout} seconds before retry.')
                 await asyncio.sleep(connection_timeout)
 
+    async def block_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+        async with message.process():
+            uuid = decode(message)
+            print(f'Block agent: {uuid}')
+            self._blocked_agents.add(uuid)
+
+    async def unblock_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+        async with message.process():
+            uuid = decode(message)
+            if uuid in self._blocked_agents:
+                print(f'Unblock agent: {uuid}')
+                self._blocked_agents.remove(uuid)
+
     async def create_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
         async with message.process():
-            print(f'Create agent: {message.body}')
-            self._created_agents.append(message.body)
+            uuid = decode(message)
+            print(f'Create agent: {uuid}')
+            self._created_agents.append(uuid)
 
     async def delete_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
         async with message.process():
-            print(f'Delete agent: {message.body}')
-            self._deleted_agents.append(message.body)
+            uuid = decode(message)
+            print(f'Delete agent: {uuid}')
+            self._deleted_agents.append(uuid)
 
     async def create_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
         async with message.process():
-            print(f'Create account: {message.body}')
-            self._created_accounts.append(message.body)
+            uuid = decode(message)
+            print(f'Create account: {uuid}')
+            self._created_accounts.append(uuid)
 
     async def delete_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
         async with message.process():
-            print(f'Delete account: {message.body}')
-            self._deleted_accounts.append(message.body)
+            uuid = decode(message)
+            print(f'Delete account: {uuid}')
+            self._deleted_accounts.append(uuid)
 
     async def consume(self, loop, binding_key: str, callback: Callable) -> None:
         queue_name = f'{binding_key}_queue'
@@ -74,11 +95,22 @@ class Consumer:
         await self.consume(loop,
                            binding_key=f'delete.account.{self._region}', callback=self.delete_account)
 
+    async def consume_block_agent(self, loop) -> None:
+        await self.consume(loop,
+                           binding_key=f'block.agent.{self._region}', callback=self.block_agent)
+
+    async def consume_unblock_agent(self, loop) -> None:
+        await self.consume(loop,
+                           binding_key=f'unblock.agent.{self._region}', callback=self.unblock_agent)
+
     def created_agents(self) -> [str]:
         return self._created_agents
 
     def deleted_agents(self) -> [str]:
         return self._deleted_agents
+    
+    def blocked_agents(self) -> [str]:
+        return self._blocked_agents
 
     def created_accounts(self) -> [str]:
         return self._created_accounts
