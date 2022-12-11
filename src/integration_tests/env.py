@@ -7,3 +7,4 @@ if platform.system() == 'Windows':
 
 TOKEN = os.environ.get('AUTH_TOKEN', 'local')
 URL = os.environ.get('URL', 'http://localhost:8080')
+RABBIT_MQ = 'amqp://localhost?connection_attempts=5&retry_delay=5'

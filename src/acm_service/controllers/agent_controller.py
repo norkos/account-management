@@ -19,10 +19,8 @@ class AgentController:
         logger.info(f'Getting agent {agent_uuid}')
         agent = await self._agents.get(agent_uuid)
         if agent is None:
-            logger.info(f'Bye bye')
             return False
 
-        logger.info(f'Show must go on')
         region = (await self._accounts.get(agent.account_id)).region
         await self._agents.update(agent_uuid, blocked=True)
         await self._producer.block_agent(region, agent_uuid)

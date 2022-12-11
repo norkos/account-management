@@ -1,7 +1,6 @@
 from typing import Callable
 
 import aio_pika
-import os
 import asyncio
 
 from aio_pika import ExchangeType, connect_robust
@@ -10,8 +9,9 @@ from aio_pika import ExchangeType, connect_robust
 def decode(message: aio_pika.abc.AbstractIncomingMessage) -> str:
     return message.body.decode('utf-8')
 
+
 class Consumer:
-    def __init__(self, region: str):
+    def __init__(self, region: str, url: str):
         self._blocked_agents = set([])
         self._deleted_accounts = []
         self._created_accounts = []
@@ -19,7 +19,7 @@ class Consumer:
         self._deleted_agents = []
         self._region = region
         self._connection = None
-        self._url = os.environ.get('CLOUDAMQP_URL')
+        self._url = url
 
     async def wait_for_rabbit(self, loop, connection_timeout: int) -> None:
         while True:
@@ -103,18 +103,23 @@ class Consumer:
         await self.consume(loop,
                            binding_key=f'unblock.agent.{self._region}', callback=self.unblock_agent)
 
+    @property
     def created_agents(self) -> [str]:
         return self._created_agents
 
+    @property
     def deleted_agents(self) -> [str]:
         return self._deleted_agents
-    
+
+    @property
     def blocked_agents(self) -> [str]:
         return self._blocked_agents
 
+    @property
     def created_accounts(self) -> [str]:
         return self._created_accounts
 
+    @property
     def deleted_accounts(self) -> [str]:
         return self._deleted_accounts
 

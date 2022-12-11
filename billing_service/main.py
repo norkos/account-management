@@ -17,7 +17,7 @@ app = FastAPI(
 )
 
 templates = Jinja2Templates(directory='templates')
-consumer = Consumer(REGION)
+consumer = Consumer(REGION, os.environ.get('CLOUDAMQP_URL'))
 
 
 @app.get("/", response_class=HTMLResponse)
