@@ -31,10 +31,10 @@ class RabbitProducerStub(RabbitProducer):
     async def delete_agent(self, region: str, agent_uuid: str) -> None:
         pass
 
-    async def create_account(self, region: str, account_uuid: str) -> None:
+    async def create_account(self, region: str, account_uuid: str, vip: bool) -> None:
         pass
 
-    async def delete_account(self, region: str, account_uuid: str) -> None:
+    async def delete_account(self, region: str, account_uuid: str, vip: bool) -> None:
         pass
 
 

@@ -63,8 +63,9 @@ class RestClient:
             response = await session.get(f'{self._url}/accounts')
             return (await response.json())['items']
 
-    async def create_account(self, name: str, email: str, region: str = None) -> str | None:
+    async def create_account(self, name: str, email: str, region: str = None, vip: bool = None) -> str | None:
         regions = ['nam', 'emea', 'apac']
+        vips = ['True', 'False']
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token,
                                           'accept': 'application/json',
@@ -73,7 +74,9 @@ class RestClient:
             response = await session.post(f'{self._url}/accounts', data=json.dumps({
                 'name': name,
                 'email': email,
-                'region': region if region else random.choice(regions)}))
+                'region': region if region else random.choice(regions),
+                'vip': vip if vip is not None else random.choice(vips)
+            }))
 
             response_status_code = response.status.real
 

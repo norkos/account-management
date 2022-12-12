@@ -20,8 +20,8 @@ services:
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
       ENABLE_EVENTS : 'True'
-      DEBUG_LOGGER_LEVEL : 'True'
-      DEBUG_REST : 'True'
+      DEBUG_LOGGER_LEVEL : 'False'
+      DEBUG_REST : 'False'
     ports:
       - '8080:80' #localhost:Dockerfile
     volumes:
@@ -31,7 +31,7 @@ services:
 
   compliance_service:
     build:
-      context: compliance_service
+      context: demo_environment/compliance_service
       dockerfile: Dockerfile
     environment:
       PORT: 70
@@ -41,9 +41,21 @@ services:
     networks:
       - network
 
+  vip_customer_service:
+    build:
+      context: demo_environment/vip_customer_service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 70
+      CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
+    ports:
+      - '8073:70'
+    networks:
+      - network
+
   emea_billing_service:
     build:
-      context: billing_service
+      context: demo_environment/billing_service
       dockerfile: Dockerfile
     environment:
       PORT: 70
@@ -56,7 +68,7 @@ services:
 
   nam_billing_service:
     build:
-      context: billing_service
+      context: demo_environment/billing_service
       dockerfile: Dockerfile
     environment:
       PORT: 70
@@ -69,7 +81,7 @@ services:
 
   apac_billing_service:
     build:
-      context: billing_service
+      context: demo_environment/billing_service
       dockerfile: Dockerfile
     environment:
       PORT: 70

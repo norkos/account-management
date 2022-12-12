@@ -14,11 +14,12 @@ def run_before_and_after_tests(tmpdir):
     reset_database()
 
 
-def create_account(name: str = 'dummy', email: str = None, region: str = 'nam') -> Response:
+def create_account(name: str = 'dummy', email: str = None, region: str = 'nam', vip: bool = False) -> Response:
     return client.post(
         '/accounts',
         headers={'X-Token': API_TOKEN},
-        json={'name': name, 'email': email if email is not None else generate_random_mail(), 'region': region}
+        json={'name': name, 'email': email if email is not None else generate_random_mail(),
+              'region': region, 'vip': str(vip)}
     )
 
 
@@ -27,14 +28,16 @@ def test_create_account(mocked_method):
     name = 'my_name'
     mail = generate_random_mail()
     region = 'emea'
+    vip = True
 
-    response = create_account(name, mail, region)
-    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=response.json()['id'])
+    response = create_account(name, mail, region, vip)
+    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=response.json()['id'], vip=vip)
 
     assert response.status_code == 200
     assert response.json()['name'] == name
     assert response.json()['email'] == mail
     assert response.json()['region'] == region
+    assert response.json()['vip'] == vip
 
 
 def test_create_account_duplicated_mail():
@@ -66,7 +69,8 @@ def test_read_account():
     name = 'my_name'
     mail = generate_random_mail()
     region = 'emea'
-    create_response = create_account(name, mail, region)
+    vip = True
+    create_response = create_account(name, mail, region, vip)
     account_id = create_response.json()["id"]
 
     read_response = client.get(
@@ -78,14 +82,16 @@ def test_read_account():
         'id': account_id,
         'name':  name,
         'email': mail,
-        'region': region
+        'region': region,
+        'vip': vip
     }
 
 
 @mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
 def test_delete_account(mocked_method):
     region = 'emea'
-    create_response = create_account(region=region)
+    vip = False
+    create_response = create_account(region=region, vip=vip)
 
     account_id = create_response.json()["id"]
     delete_response = client.delete(
@@ -93,7 +99,7 @@ def test_delete_account(mocked_method):
         headers={"X-Token": API_TOKEN}
     )
     assert delete_response.status_code == 202
-    mocked_method.assert_called_with(ANY, region=region, account_uuid=create_response.json()["id"])
+    mocked_method.assert_called_with(ANY, region=region, account_uuid=create_response.json()["id"], vip=vip)
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -157,7 +163,7 @@ def test_can_remove_all_accounts(mocked_method):
         headers={'X-Token': API_TOKEN,
                  'TWO-FA': TWO_FA}
     )
-    mocked_method.assert_called_with(ANY, region='*', account_uuid='*')
+    mocked_method.assert_called_with(ANY, region='*', account_uuid='*', vip=True)
 
     assert response.status_code == 202
 

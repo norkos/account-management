@@ -1,0 +1,20 @@
+<html>
+<head>
+    <title>VIP customers</title>
+</head>
+<body>
+    <h1>VIP customers</h1>
+    <div>Recently created VIP accounts:</div>
+    <ul>
+        {% for account in created_accounts %}
+            <li>{{account}}</li>
+        {% endfor %}
+    </ul>
+    <div>Recently deleted VIP accounts:</div>
+    <ul>
+        {% for account in deleted_accounts %}
+            <li>{{account}}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

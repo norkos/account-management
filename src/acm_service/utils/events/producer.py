@@ -65,13 +65,15 @@ class RabbitProducer:
         return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
-    async def create_account(self, region: str, account_uuid: str) -> None:
+    async def create_account(self, region: str, account_uuid: str, vip: bool) -> None:
         routing_key = f'create.account.{region}'
+        routing_key += '.vip' if vip else '.standard'
         return await self._send_customer_event(account_uuid, routing_key)
 
     @decorate_event
-    async def delete_account(self, region: str, account_uuid: str) -> None:
+    async def delete_account(self, region: str, account_uuid: str, vip: bool) -> None:
         routing_key = f'delete.account.{region}'
+        routing_key += '.vip' if vip else '.standard'
         return await self._send_customer_event(account_uuid, routing_key)
 
 

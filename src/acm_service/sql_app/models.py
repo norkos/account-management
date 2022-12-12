@@ -21,5 +21,6 @@ class Account(Base):
     email = Column(String, unique=True)
     name = Column(String, index=False)
     region = Column(String, nullable=False)
+    vip = Column(Boolean, nullable=False)
 
     agents = relationship('Agent',  cascade='all,delete', backref='accounts', passive_deletes=True)

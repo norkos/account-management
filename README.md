@@ -7,7 +7,7 @@ The goal of the project was to play with the Microservice architecture and impro
 1. As a customer I'd like to use account-management-service REST API to create the frontend (DONE)
 2. As a billing team I'd like to be updated regarding both Accounts and Agents, so I can calculate invoices (DONE)
 3. As a compliance office I'd like to be able to block Agent if agent account is hacked, so agent won't be charged to the extra usage (DONE)
-4. As a Success Manager I'd like to be informed about creating and removing VIP accounts, so I can calculate key customer turnover (TO DO)
+4. As a Success Manager I'd like to be informed about creating and removing VIP accounts, so I can calculate key customer turnover (DONE)
 
 ### Architecture
 
@@ -45,7 +45,7 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
    - Liberato ![Liberato](doc/liberato.JPG) 
 
 ### TODO list
-- integration 
+- https://locust.io/ to make load testing
 - play more with Heroku
   - check what resilience can be supported by Heroku
   - check if vertical/horizontal scaling can be supported by Heroku

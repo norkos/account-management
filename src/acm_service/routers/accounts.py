@@ -56,7 +56,7 @@ async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_acc
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await accounts.delete(account_id)
 
-    await rabbit_producer.delete_account(region=account.region, account_uuid=account_id)
+    await rabbit_producer.delete_account(region=account.region, account_uuid=account_id, vip=account.vip)
     for agent in schemas.Account.from_orm(account).agents:
         await rabbit_producer.delete_agent(region=account.region, agent_uuid=str(agent.id))
     logger.info(f'Account {account_id} was deleted')
@@ -66,7 +66,8 @@ async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_acc
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: AccountDAL = Depends(get_account_dal),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await accounts.delete_all()
-    await rabbit_producer.delete_account('*', '*')
+    await rabbit_producer.delete_account('*', '*', vip=True)
+    await rabbit_producer.delete_agent('*', '*')
     logger.info(f'All accounts were deleted')
 
 
@@ -77,8 +78,8 @@ async def create_account(account: schemas.AccountCreate,
     if await accounts.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 
-    result = await accounts.create(name=account.name, email=account.email, region=account.region)
+    result = await accounts.create(name=account.name, email=account.email, region=account.region, vip=account.vip)
     logger.info(f'Account {result.id} was created')
 
-    await rabbit_producer.create_account(region=account.region, account_uuid=result.id)
+    await rabbit_producer.create_account(region=account.region, account_uuid=result.id, vip=account.vip)
     return result

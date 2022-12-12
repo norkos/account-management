@@ -16,6 +16,7 @@ app = FastAPI(
     docs_url='/_swagger'
 )
 
+
 templates = Jinja2Templates(directory='templates')
 consumer = Consumer(REGION, os.environ.get('CLOUDAMQP_URL'))
 
@@ -24,11 +25,11 @@ consumer = Consumer(REGION, os.environ.get('CLOUDAMQP_URL'))
 async def root(request: Request):
     return templates.TemplateResponse('index.html', {'request': request,
                                                      'region': REGION,
-                                                     'created_agents': consumer.created_agents(),
-                                                     'deleted_agents': consumer.deleted_agents(),
-                                                     'blocked_agents': consumer.blocked_agents(),
-                                                     'created_accounts': consumer.created_accounts(),
-                                                     'deleted_accounts': consumer.deleted_accounts(),
+                                                     'created_agents': consumer.created_agents,
+                                                     'deleted_agents': consumer.deleted_agents,
+                                                     'blocked_agents': consumer.blocked_agents,
+                                                     'created_accounts': consumer.created_accounts,
+                                                     'deleted_accounts': consumer.deleted_accounts,
                                                      })
 
 

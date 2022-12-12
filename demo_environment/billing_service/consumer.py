@@ -69,6 +69,7 @@ class Consumer:
             print(f'Delete account: {uuid}')
             self._deleted_accounts.append(uuid)
 
+    # noinspection DuplicatedCode
     async def consume(self, loop, binding_key: str, callback: Callable) -> None:
         queue_name = f'{binding_key}_queue'
 
@@ -89,11 +90,11 @@ class Consumer:
 
     async def consume_create_account(self, loop) -> None:
         await self.consume(loop,
-                           binding_key=f'create.account.{self._region}', callback=self.create_account)
+                           binding_key=f'create.account.{self._region}.#', callback=self.create_account)
 
     async def consume_delete_account(self, loop) -> None:
         await self.consume(loop,
-                           binding_key=f'delete.account.{self._region}', callback=self.delete_account)
+                           binding_key=f'delete.account.{self._region}.#', callback=self.delete_account)
 
     async def consume_block_agent(self, loop) -> None:
         await self.consume(loop,
@@ -122,6 +123,14 @@ class Consumer:
     @property
     def deleted_accounts(self) -> [str]:
         return self._deleted_accounts
+
+    @property
+    def created_vip_accounts(self) -> [str]:
+        return self._created_vip_accounts
+
+    @property
+    def deleted_vip_accounts(self) -> [str]:
+        return self._deleted_vip_accounts
 
     async def close(self):
         if self._connection:

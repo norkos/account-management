@@ -1,13 +1,8 @@
 import asyncio
-import sys
 
+from integration_tests.consumer import Consumer
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
 from integration_tests.env import TOKEN, URL, RABBIT_MQ
-
-# some magic needed to see billing package without propagating __init__
-import pathlib
-sys.path.append(str(pathlib.Path().resolve()))
-from billing_service.consumer import Consumer
 
 
 async def remove_all_accounts(api: RestClient) -> None:
@@ -54,10 +49,15 @@ class ConsumerWrapper:
         await self._consumer.consume_delete_agent(loop)
         await self._consumer.consume_block_agent(loop)
         await self._consumer.consume_unblock_agent(loop)
+        await self._consumer.consume_create_vip_account(loop)
+        await self._consumer.consume_delete_vip_account(loop)
 
     def clean_resources(self):
         self._consumer.created_accounts.clear()
         self._consumer.deleted_accounts.clear()
+        self._consumer.created_vip_accounts.clear()
+        self._consumer.deleted_vip_accounts.clear()
+
         self._consumer.created_agents.clear()
         self._consumer.deleted_agents.clear()
         self._consumer.blocked_agents.clear()
@@ -82,6 +82,14 @@ class ConsumerWrapper:
         await time_for_lost_events()
         assert set(agents) == set(self._consumer.blocked_agents)
 
+    async def assert_deleted_vip_accounts(self, accounts):
+        await time_for_lost_events()
+        assert set(accounts) == set(self._consumer.deleted_vip_accounts)
+
+    async def assert_created_vip_accounts(self, accounts):
+        await time_for_lost_events()
+        assert set(accounts) == set(self._consumer.created_vip_accounts)
+
 
 class EventHandler:
     def __init__(self, region: str):
@@ -100,17 +108,20 @@ class EventHandler:
         await self._consumer.close()
 
 
-async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: str) -> None:
+async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: str, vip: bool) -> None:
     async with EventHandler(region) as consumer:
         account_name, email = generate_account_details()
-        account_uuid = await api.create_account(account_name, email, region)
+        account_uuid = await api.create_account(account_name, email, region, vip)
 
         #   verify created account
         account = await api.get_account(account_uuid)
         assert account['name'] == account_name
         assert account['email'] == email
         assert account['id'] == account_uuid
+        assert account['vip'] == vip
         await consumer.assert_created_accounts([account_uuid])
+        if vip:
+            await consumer.assert_created_vip_accounts([account_uuid])
 
         #   create agents
         agents = []
@@ -126,6 +137,8 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: st
         #   delete account
         await api.delete_account(account_uuid)
         await consumer.assert_deleted_accounts([account_uuid])
+        if vip:
+            await consumer.assert_deleted_vip_accounts([account_uuid])
 
         #   verify that account was deleted
         account = await api.get_account(account_uuid)
@@ -181,7 +194,8 @@ def test_create_account_with_agents():
     region = 'emea'
 
     try:
-        asyncio.run(flow_of_the_account(rest, how_many_agents, region))
+        asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=True))
+        asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=False))
     finally:
         asyncio.run(remove_all_accounts(rest))
 

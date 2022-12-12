@@ -31,6 +31,7 @@ class AccountBase(BaseModel):
     name: str
     email: EmailStr
     region: RegionEnum
+    vip: bool
 
 
 class AccountCreate(AccountBase):
