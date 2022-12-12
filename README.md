@@ -34,7 +34,9 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
   - mocks
 - integration tests
 - event handling implemented by RabbitMQ used in an async way using Topics
-  - under `billing_service` you might find async consumer for Topics
+  - under `demo_environment/billing_service` you get consumer for accounts/agents Topics (user story 2.)
+  - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
+  - under `demo_environment/vip_customer_service` you get consumer for VIP accounts (user story 4.)
 - Docker to make a smart environment: 
   - you can have your own e2e environment locally, 
   - or run the project with PyCharm with `main.py`, 
