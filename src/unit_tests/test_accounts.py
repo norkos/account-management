@@ -1,6 +1,6 @@
+from unittest.mock import ANY
 import mock
 import pytest
-from unittest.mock import ANY
 from requests import Response
 
 from acm_service.utils.env import API_TOKEN, TWO_FA
@@ -132,7 +132,7 @@ def test_read_account_not_found():
 
 def test_read_accounts():
     how_many = 20
-    for x in range(how_many):
+    for _ in range(how_many):
         create_account()
 
     response = client.get(
@@ -159,7 +159,7 @@ def test_can_remove_all_accounts(mocked_method):
     create_account()
 
     response = client.post(
-        f'/accounts/clear',
+        '/accounts/clear',
         headers={'X-Token': API_TOKEN,
                  'TWO-FA': TWO_FA}
     )
@@ -173,7 +173,7 @@ def test_cannot_remove_all_accounts():
     create_account()
 
     response = client.post(
-        f'/accounts/clear',
+        '/accounts/clear',
         headers={'X-Token': API_TOKEN}
     )
 

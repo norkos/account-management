@@ -22,7 +22,7 @@ async def remove_all_accounts(api: RestClient) -> None:
 
 async def create_accounts(api: RestClient, how_many_accounts: int) -> None:
     tasks = []
-    for x in range(0, how_many_accounts):
+    for _ in range(0, how_many_accounts):
         name, email = generate_account_details()
         tasks.append(asyncio.create_task(api.create_account(name, email)))
 
@@ -125,7 +125,7 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: st
 
         #   create agents
         agents = []
-        for x in range(amount_of_agents):
+        for _ in range(amount_of_agents):
             agent_name, agent_email = generate_agent_details()
             agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
             agents.append(agent_uuid)

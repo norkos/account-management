@@ -1,8 +1,9 @@
 from uuid import uuid4
+from unittest.mock import ANY
 
 import mock
 import pytest
-from unittest.mock import ANY
+
 from requests import Response
 
 from acm_service.utils.env import API_TOKEN, TWO_FA
@@ -25,7 +26,7 @@ def account() -> Account:
 def get_agent(account_uuid: str, agent_uuid: str) -> Agent:
     response = client.get(
         f'/accounts/{account_uuid}/agents/{agent_uuid}',
-        headers={"X-Token": API_TOKEN}
+        headers={'X-Token': API_TOKEN}
     )
     data = response.json()
     return Agent(**data)
@@ -73,7 +74,7 @@ def test_block_agent(block_agent, account):
     # when blocking
     response = client.post(
         f'/agents/block_agent/{agent_uuid}',
-        headers={"X-Token": API_TOKEN}
+        headers={'X-Token': API_TOKEN}
     )
     block_agent.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
@@ -88,13 +89,13 @@ def test_unblock_agent(unblock_method, account):
     agent_uuid = response.json()['id']
     client.post(
         f'/agents/block_agent/{agent_uuid}',
-        headers={"X-Token": API_TOKEN}
+        headers={'X-Token': API_TOKEN}
     )
 
     #  when unblocking
     response = client.post(
         f'/agents/unblock_agent/{agent_uuid}',
-        headers={"X-Token": API_TOKEN}
+        headers={'X-Token': API_TOKEN}
     )
     unblock_method.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
@@ -112,7 +113,7 @@ def test_create_accounts_bad_token(account):
     response = create_agent(account.id, token='dummy_token')
 
     assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid X-Token header"}
+    assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
 def test_read_agent(account):
@@ -187,7 +188,7 @@ def test_read_agent_not_found(account):
 
 def test_read_agents(account):
     how_many = 20
-    for x in range(how_many):
+    for _ in range(how_many):
         create_agent(account.id)
 
     response = client.get(
@@ -205,7 +206,7 @@ def test_can_remove_all_agents(mocked_method, account):
     create_agent(account.id)
 
     response = client.post(
-        f'/agents/clear',
+        '/agents/clear',
         headers={'X-Token': API_TOKEN,
                  'TWO-FA': TWO_FA}
     )
@@ -219,7 +220,7 @@ def test_cannot_remove_all_agents(account):
     create_agent(account.id)
 
     response = client.post(
-        f'/accounts/clear',
+        '/accounts/clear',
         headers={'X-Token': API_TOKEN}
     )
 

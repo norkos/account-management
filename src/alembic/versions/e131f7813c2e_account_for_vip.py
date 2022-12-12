@@ -1,3 +1,4 @@
+# pylint: skip-file
 """account_for_vip
 
 Revision ID: e131f7813c2e

@@ -1,5 +1,5 @@
-from fastapi_pagination.default import Page as BasePage, Params as BaseParams
 from typing import TypeVar, Generic
+from fastapi_pagination.default import Page as BasePage, Params as BaseParams
 from fastapi import Query
 
 T = TypeVar("T")

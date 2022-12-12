@@ -1,3 +1,4 @@
+# pylint: skip-file
 """model with cascade
 
 Revision ID: 0f71bbb218e0

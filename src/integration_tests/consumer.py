@@ -1,12 +1,11 @@
 from typing import Callable
-
-import aio_pika
 import asyncio
 
 from aio_pika import ExchangeType, connect_robust
+from aio_pika.abc import AbstractIncomingMessage
 
 
-def decode(message: aio_pika.abc.AbstractIncomingMessage) -> str:
+def decode(message: AbstractIncomingMessage) -> str:
     return message.body.decode('utf-8')
 
 
@@ -34,50 +33,50 @@ class Consumer:
                 print(f'Waiting for RabbitMQ to be alive. Sleeping {connection_timeout} seconds before retry.')
                 await asyncio.sleep(connection_timeout)
 
-    async def block_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def block_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Block agent: {uuid}')
             self._blocked_agents.add(uuid)
 
-    async def unblock_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def unblock_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             if uuid in self._blocked_agents:
                 print(f'Unblock agent: {uuid}')
                 self._blocked_agents.remove(uuid)
 
-    async def create_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def create_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Create agent: {uuid}')
             self._created_agents.append(uuid)
 
-    async def delete_agent(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def delete_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Delete agent: {uuid}')
             self._deleted_agents.append(uuid)
 
-    async def create_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def create_account(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Create account: {uuid}')
             self._created_accounts.append(uuid)
 
-    async def delete_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def delete_account(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Delete account: {uuid}')
             self._deleted_accounts.append(uuid)
 
-    async def create_vip_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def create_vip_account(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Create vip account: {uuid}')
             self._created_vip_accounts.append(uuid)
 
-    async def delete_vip_account(self, message: aio_pika.abc.AbstractIncomingMessage, ) -> None:
+    async def delete_vip_account(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             print(f'Delete account: {uuid}')

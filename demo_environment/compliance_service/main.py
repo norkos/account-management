@@ -1,7 +1,7 @@
 import asyncio
 import platform
-import uvicorn
 import os
+import uvicorn
 
 from aio_pika import ExchangeType, Message, DeliveryMode, connect
 from fastapi import FastAPI, status, Depends, Header, HTTPException
@@ -36,11 +36,11 @@ class RabbitProducer:
             print(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
 
     async def block_agent(self, agent_uuid: str) -> None:
-        routing_key = f'block.agent'
+        routing_key = 'block.agent'
         return await self._send_event(agent_uuid, routing_key)
 
     async def unblock_agent(self, agent_uuid: str) -> None:
-        routing_key = f'unblock.agent'
+        routing_key = 'unblock.agent'
         return await self._send_event(agent_uuid, routing_key)
 
 
@@ -49,7 +49,7 @@ event_producer = RabbitProducer(os.environ.get('CLOUDAMQP_URL'))
 
 def get_token_header(x_token: str = Header()) -> bool:
     if x_token != API_TOKEN:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid X-Token header")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid X-Token header')
     return True
 
 

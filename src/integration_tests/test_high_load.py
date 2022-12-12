@@ -23,7 +23,7 @@ async def _test_create_account_with_agents(rest: RestClient):
 
     # when
     tasks = []
-    for x in range(0, how_many_accounts):
+    for _ in range(0, how_many_accounts):
         tasks.append(asyncio.create_task(flow_of_the_account(rest, how_many_agents_per_account)))
     await asyncio.gather(*tasks)
 

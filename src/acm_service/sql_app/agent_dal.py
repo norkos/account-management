@@ -1,14 +1,14 @@
+import logging
+from typing import List
+from uuid import uuid4
+
 from sqlalchemy.future import select
 from sqlalchemy import delete, update
 from sqlalchemy.orm import Session
-from typing import List
-from uuid import uuid4
 
 from acm_service.sql_app.models import Agent
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
-
-import logging
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -17,9 +17,9 @@ def decorate_database(coro):
     async def wrapper(*args, **kwargs):
         try:
             return await coro(*args, **kwargs)
-        except BaseException as e:
-            logger.exception("DataBase exception %s", e)
-            raise e
+        except BaseException as exc:
+            logger.exception("DataBase exception %s", exc)
+            raise exc
     return wrapper
 
 
@@ -36,8 +36,8 @@ class AgentDAL:
         return new_agent
 
     @decorate_database
-    async def get(self, uuid: str) -> Agent | None:
-        query = await self._session.execute(select(Agent).where(Agent.id == uuid))
+    async def get(self, agent_uuid: str) -> Agent | None:
+        query = await self._session.execute(select(Agent).where(Agent.id == agent_uuid))
         return query.scalar()
 
     @decorate_database
@@ -51,13 +51,13 @@ class AgentDAL:
         return query.scalar()
 
     @decorate_database
-    async def get_agents_for_account(self, uuid: str) -> List[Agent]:
-        query = await self._session.execute(select(Agent).where(Agent.account_id == uuid).order_by(Agent.name))
+    async def get_agents_for_account(self, agent_uuid: str) -> List[Agent]:
+        query = await self._session.execute(select(Agent).where(Agent.account_id == agent_uuid).order_by(Agent.name))
         return query.scalars().all()
 
     @decorate_database
-    async def delete(self, uuid: str):
-        await self._session.execute(delete(Agent).where(Agent.id == uuid))
+    async def delete(self, agent_uuid: str):
+        await self._session.execute(delete(Agent).where(Agent.id == agent_uuid))
         await self._session.commit()
 
     @decorate_database
@@ -65,8 +65,8 @@ class AgentDAL:
         await self._session.execute(delete(Agent))
 
     @decorate_database
-    async def update(self, uuid: str, **kwargs):
-        query = update(Agent).where(Agent.id == uuid).values(**kwargs).\
+    async def update(self, agent_uuid: str, **kwargs):
+        query = update(Agent).where(Agent.id == agent_uuid).values(**kwargs).\
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
         await self._session.flush()

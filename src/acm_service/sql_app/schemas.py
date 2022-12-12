@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, UUID4
 from enum import Enum
+from pydantic import BaseModel, EmailStr, UUID4
 
 
 class AgentBase(BaseModel):

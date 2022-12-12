@@ -1,8 +1,7 @@
 from typing import Callable
-
-import aio_pika
 import asyncio
 
+import aio_pika
 from aio_pika import ExchangeType, connect_robust
 
 
@@ -53,11 +52,11 @@ class Consumer:
 
     async def consume_create_vip_account(self, loop) -> None:
         await self.consume(loop,
-                           binding_key=f'create.account.*.vip', callback=self.create_vip_account)
+                           binding_key='create.account.*.vip', callback=self.create_vip_account)
 
     async def consume_delete_vip_account(self, loop) -> None:
         await self.consume(loop,
-                           binding_key=f'delete.account.*.vip', callback=self.delete_vip_account)
+                           binding_key='delete.account.*.vip', callback=self.delete_vip_account)
 
     @property
     def created_vip_accounts(self) -> [str]:

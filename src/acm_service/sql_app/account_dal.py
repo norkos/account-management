@@ -1,9 +1,10 @@
-from sqlalchemy.orm import selectinload, joinedload, Session
-from sqlalchemy.future import select
-from sqlalchemy import delete, update
 from typing import List
 from uuid import uuid4
 import logging
+
+from sqlalchemy.orm import selectinload, joinedload, Session
+from sqlalchemy.future import select
+from sqlalchemy import delete, update
 
 from acm_service.sql_app.models import Account
 from acm_service.utils.logconf import DEFAULT_LOGGER
@@ -16,9 +17,9 @@ def decorate_database(coro):
     async def wrapper(*args, **kwargs):
         try:
             return await coro(*args, **kwargs)
-        except BaseException as e:
-            logger.exception("DataBase exception %s", e)
-            raise e
+        except BaseException as exc:
+            logger.exception("DataBase exception %s", exc)
+            raise exc
     return wrapper
 
 
@@ -36,13 +37,13 @@ class AccountDAL:
         return new_account
 
     @decorate_database
-    async def get(self, uuid: str) -> Account | None:
-        query = await self._session.execute(select(Account).where(Account.id == uuid))
+    async def get(self, account_uuid: str) -> Account | None:
+        query = await self._session.execute(select(Account).where(Account.id == account_uuid))
         return query.scalar()
 
     @decorate_database
-    async def get_with_agents(self, uuid: str) -> Account | None:
-        query = await self._session.execute(select(Account).where(Account.id == uuid).
+    async def get_with_agents(self, account_uuid: str) -> Account | None:
+        query = await self._session.execute(select(Account).where(Account.id == account_uuid).
                                             options(selectinload(Account.agents)))
         return query.scalar()
 
@@ -61,15 +62,15 @@ class AccountDAL:
         await self._session.execute(delete(Account))
 
     @decorate_database
-    async def delete(self, uuid: str):
-        request = select(Account).where(Account.id == uuid).options(joinedload(Account.agents))
+    async def delete(self, account_uuid: str):
+        request = select(Account).where(Account.id == account_uuid).options(joinedload(Account.agents))
         account = await self._session.scalar(request)
         await self._session.delete(account)
         await self._session.commit()
 
     @decorate_database
-    async def update(self, uuid: str, **kwargs):
-        query = update(Account).where(Account.id == uuid).values(**kwargs).\
+    async def update(self, account_uuid: str, **kwargs):
+        query = update(Account).where(Account.id == account_uuid).values(**kwargs).\
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
         await self._session.flush()

@@ -1,9 +1,10 @@
 import asyncio
+import logging
+
 from aio_pika import ExchangeType, Message, DeliveryMode, connect
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
-import logging
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -17,8 +18,8 @@ def decorate_event(coro):
         while retry < retries:
             try:
                 return await coro(*args, **kwargs)
-            except BaseException as e:
-                ex = e
+            except BaseException as exc:
+                ex = exc
                 retry += 1
                 logger.warning(f'Sending event failed. Retrying for the {retry}. time in {retry * time_out} seconds')
                 await asyncio.sleep(retry * time_out)

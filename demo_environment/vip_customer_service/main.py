@@ -1,11 +1,12 @@
 import platform
-import uvicorn
 import asyncio
 import os
 
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+
 from consumer import Consumer
 
 
@@ -16,7 +17,7 @@ PORT = os.environ.get('PORT', '8070')
 REGION = '.'
 
 app = FastAPI(
-    title=f'vip-customer-billing-service',
+    title='vip-customer-billing-service',
     version='1.0',
     docs_url='/_swagger'
 )

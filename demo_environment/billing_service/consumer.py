@@ -1,8 +1,7 @@
 from typing import Callable
-
-import aio_pika
 import asyncio
 
+import aio_pika
 from aio_pika import ExchangeType, connect_robust
 
 
@@ -123,14 +122,6 @@ class Consumer:
     @property
     def deleted_accounts(self) -> [str]:
         return self._deleted_accounts
-
-    @property
-    def created_vip_accounts(self) -> [str]:
-        return self._created_vip_accounts
-
-    @property
-    def deleted_vip_accounts(self) -> [str]:
-        return self._deleted_vip_accounts
 
     async def close(self):
         if self._connection:

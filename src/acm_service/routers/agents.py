@@ -1,12 +1,9 @@
-import json
+import logging
 from typing import Any
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
-import logging
-
 from fastapi_pagination import paginate
-
 
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
@@ -72,7 +69,7 @@ async def read_agents(account_id: str, agents: AgentDAL = Depends(get_agent_dal)
 
 
 @router.get('/agents', response_model=Page[Agent])
-async def read_agents(database: AgentDAL = Depends(get_agent_dal)):
+async def read_all_agents(database: AgentDAL = Depends(get_agent_dal)):
     return paginate(await database.get_agents())
 
 
@@ -99,7 +96,7 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
                 rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
     await agents.delete_all()
     await rabbit_producer.delete_agent('*', '*')
-    logger.info(f'All agents were deleted')
+    logger.info('All agents were deleted')
 
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)

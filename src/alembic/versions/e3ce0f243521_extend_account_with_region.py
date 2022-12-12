@@ -1,3 +1,4 @@
+# pylint: skip-file
 """extend account with region
 
 Revision ID: e3ce0f243521

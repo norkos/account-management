@@ -1,19 +1,18 @@
+import logging
 from typing import Any
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
-
 from fastapi_pagination import paginate
 
 from acm_service.sql_app import schemas
 from acm_service.utils.events.producer import RabbitProducer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_account_dal, get_rabbit_producer, get_token_header, get_2fa_token_header
+from acm_service.dependencies import get_account_dal, \
+    get_rabbit_producer, get_token_header, get_2fa_token_header
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
-
-import logging
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -68,7 +67,7 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: Ac
     await accounts.delete_all()
     await rabbit_producer.delete_account('*', '*', vip=True)
     await rabbit_producer.delete_agent('*', '*')
-    logger.info(f'All accounts were deleted')
+    logger.info('All accounts were deleted')
 
 
 @router.post('', response_model=schemas.AccountWithoutAgents)
