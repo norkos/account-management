@@ -4,15 +4,19 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+import platform
 
 from consumer import Consumer
+
+if platform.system() == 'Windows':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 PORT = os.environ.get('PORT', '8070')
 REGION = os.environ.get('REGION', 'emea')
 
 app = FastAPI(
     title=f'{REGION}-billing-service',
-    version='0.1',
+    version='1.0',
     docs_url='/_swagger'
 )
 

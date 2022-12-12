@@ -35,6 +35,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 70
+      AUTH_TOKEN: local
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     ports:
       - '8060:70'
