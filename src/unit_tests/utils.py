@@ -64,6 +64,11 @@ class AccountDALStub(AccountDAL):
             return self._accounts_by_uuid[account_uuid]
         return None
 
+    async def get_with_agents(self, account_uuid: str) -> Account | None:
+        if account_uuid in self._accounts_by_uuid:
+            return self._accounts_by_uuid[account_uuid]
+        return None
+
     async def get_account_by_email(self, email: str) -> Account | None:
         if email in self._accounts_by_mail:
             return self._accounts_by_mail[email]

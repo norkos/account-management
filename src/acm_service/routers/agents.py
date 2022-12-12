@@ -18,7 +18,6 @@ from acm_service.utils.events.producer import RabbitProducer
 from acm_service.utils.pagination import Page
 from acm_service.controllers.agent_controller import AgentController
 from acm_service.sql_app.account_dal import AccountDAL
-from acm_service.sql_app.database import async_session
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -26,19 +25,6 @@ router = APIRouter(
     tags=["agents"],
     dependencies=[Depends(get_token_header)]
 )
-
-
-@router.post('/agents/stubber/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def stubber(agent_id: str):
-    byte = json.dumps(agent_id).encode('utf-8')
-    uuid = byte.decode('utf-8')
-    async with async_session() as session:
-        async with session.begin():
-            agents = AgentDAL(session)
-            accounts = AccountDAL(session)
-            controller = AgentController(agents, accounts, get_rabbit_producer())
-            result = await controller.block_agent(uuid)
-            logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
 
 @router.get('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)

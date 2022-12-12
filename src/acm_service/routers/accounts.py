@@ -51,12 +51,14 @@ async def read_account_with_agents(account_id: str, accounts: AccountDAL = Depen
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
-    account = await accounts.get(account_id)
+    account = await accounts.get_with_agents(account_id)
     if account is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     await accounts.delete(account_id)
 
     await rabbit_producer.delete_account(region=account.region, account_uuid=account_id)
+    for agent in schemas.Account.from_orm(account).agents:
+        await rabbit_producer.delete_agent(region=account.region, agent_uuid=str(agent.id))
     logger.info(f'Account {account_id} was deleted')
 
 
