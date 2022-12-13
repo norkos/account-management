@@ -22,6 +22,8 @@ services:
       ENABLE_EVENTS : 'True'
       DEBUG_LOGGER_LEVEL : 'False'
       DEBUG_REST : 'False'
+      CLOUDAMQP_RETRIES : '6'
+      CLOUDAMQP_TIMEOUT : '10'
     ports:
       - '8080:80' #localhost:Dockerfile
     volumes:

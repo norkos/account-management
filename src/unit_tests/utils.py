@@ -2,22 +2,22 @@ import uuid
 from uuid import uuid4
 from typing import List
 
-
+from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.orm import Session
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.sql_app.models import Account, Agent
-from acm_service.utils.events.producer import RabbitProducer
+from acm_service.utils.events.producer import EventProducer
 
 
 def generate_random_mail() -> str:
     return f'{str(uuid.uuid4())}@test.com'
 
 
-class RabbitProducerStub(RabbitProducer):
+class RabbitProducerStub(EventProducer):
 
-    def __init__(self):
-        super().__init__('')
+    def attach_to_connection(self, event_broker: AbstractRobustConnection | None):
+        pass
 
     async def block_agent(self, region: str, agent_uuid: str) -> None:
         pass

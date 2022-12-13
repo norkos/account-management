@@ -7,11 +7,10 @@ from fastapi_pagination import paginate
 
 from acm_service.sql_app.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_agent_dal, get_rabbit_producer, get_token_header, get_2fa_token_header, \
-    get_account_dal
+from acm_service.dependencies import get_agent_dal, get_token_header, get_2fa_token_header, get_account_dal
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.utils.events.producer import RabbitProducer
+from acm_service.utils.events.producer import EventProducer, get_event_producer
 from acm_service.utils.pagination import Page
 from acm_service.controllers.agent_controller import AgentController
 from acm_service.sql_app.account_dal import AccountDAL
@@ -36,7 +35,7 @@ async def read_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
 @router.post('/agents/block_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
 async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
                       accounts: AccountDAL = Depends(get_account_dal),
-                      rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                      rabbit_producer: EventProducer = Depends(get_event_producer)):
     result = await AgentController(agents, accounts, rabbit_producer).block_agent(agent_id)
 
     if not result:
@@ -46,7 +45,7 @@ async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
 @router.post('/agents/unblock_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
 async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
                         accounts: AccountDAL = Depends(get_account_dal),
-                        rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                        rabbit_producer: EventProducer = Depends(get_event_producer)):
     result = await AgentController(agents, accounts, rabbit_producer).unblock_agent(agent_id)
 
     if not result:
@@ -77,7 +76,7 @@ async def read_all_agents(database: AgentDAL = Depends(get_agent_dal)):
 async def create_agent(account_id: str, agent: AgentCreate,
                        agents: AgentDAL = Depends(get_agent_dal),
                        accounts: AgentDAL = Depends(get_account_dal),
-                       rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                       rabbit_producer: EventProducer = Depends(get_event_producer)):
     if await agents.get_agent_by_email(agent.email):
         raise_bad_request(f'E-mail {agent.email} is already used')
 
@@ -93,7 +92,7 @@ async def create_agent(account_id: str, agent: AgentCreate,
 @router.post('/agents/clear', status_code=status.HTTP_202_ACCEPTED)
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
                 agents: AgentDAL = Depends(get_agent_dal),
-                rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                rabbit_producer: EventProducer = Depends(get_event_producer)):
     await agents.delete_all()
     await rabbit_producer.delete_agent('*', '*')
     logger.info('All agents were deleted')
@@ -103,7 +102,7 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
 async def delete_agent(account_id: str, agent_id: str,
                        agents: AgentDAL = Depends(get_agent_dal),
                        accounts: AgentDAL = Depends(get_account_dal),
-                       rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                       rabbit_producer: EventProducer = Depends(get_event_producer)):
     agent = await agents.get(agent_id)
     account = await accounts.get(account_id)
 

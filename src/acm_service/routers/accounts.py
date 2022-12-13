@@ -6,10 +6,9 @@ from fastapi import APIRouter, status, Response
 from fastapi_pagination import paginate
 
 from acm_service.sql_app import schemas
-from acm_service.utils.events.producer import RabbitProducer
+from acm_service.utils.events.producer import EventProducer, get_event_producer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_account_dal, \
-    get_rabbit_producer, get_token_header, get_2fa_token_header
+from acm_service.dependencies import get_account_dal, get_token_header, get_2fa_token_header
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
@@ -49,7 +48,7 @@ async def read_account_with_agents(account_id: str, accounts: AccountDAL = Depen
 
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal),
-                         rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                         rabbit_producer: EventProducer = Depends(get_event_producer)):
     account = await accounts.get_with_agents(account_id)
     if account is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -63,7 +62,7 @@ async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_acc
 
 @router.post('/clear', status_code=status.HTTP_202_ACCEPTED)
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: AccountDAL = Depends(get_account_dal),
-                rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                rabbit_producer: EventProducer = Depends(get_event_producer)):
     await accounts.delete_all()
     await rabbit_producer.delete_account('*', '*', vip=True)
     await rabbit_producer.delete_agent('*', '*')
@@ -73,7 +72,7 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: Ac
 @router.post('', response_model=schemas.AccountWithoutAgents)
 async def create_account(account: schemas.AccountCreate,
                          accounts: AccountDAL = Depends(get_account_dal),
-                         rabbit_producer: RabbitProducer = Depends(get_rabbit_producer)):
+                         rabbit_producer: EventProducer = Depends(get_event_producer)):
     if await accounts.get_account_by_email(account.email):
         raise_bad_request('E-mail already used')
 

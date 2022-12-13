@@ -1,10 +1,11 @@
 import asyncio
 import logging
 
-from aio_pika import ExchangeType, Message, DeliveryMode, connect
+from aio_pika import ExchangeType, Message, DeliveryMode
+from aio_pika.abc import AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-
+from acm_service.utils.env import ENCODING
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -29,21 +30,29 @@ def decorate_event(coro):
     return wrapper
 
 
-class RabbitProducer:
+class EventProducer:
 
-    def __init__(self, url: str):
-        self._url = url
+    instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if EventProducer.instance is None:
+            EventProducer.instance = EventProducer()
+        return EventProducer.instance
+
+    def __init__(self):
+        self._connection = None
+
+    def attach_to_connection(self, event_broker: AbstractRobustConnection | None):
+        self._connection = event_broker
 
     async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
         exchange_name = 'topic_customers'
-
-        connection = await connect(self._url)
-        async with connection:
-            channel = await connection.channel()
-            exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-            message = Message(entity_uuid.encode('utf-8'), delivery_mode=DeliveryMode.PERSISTENT)
-            await exchange.publish(message, routing_key=routing_key)
-            logger.info(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
+        channel = await self._connection.channel()
+        exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
+        message = Message(entity_uuid.encode(ENCODING), delivery_mode=DeliveryMode.PERSISTENT)
+        await exchange.publish(message, routing_key=routing_key)
+        logger.info(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
 
     @decorate_event
     async def block_agent(self, region: str, agent_uuid: str) -> None:
@@ -78,10 +87,15 @@ class RabbitProducer:
         return await self._send_customer_event(account_uuid, routing_key)
 
 
-class LocalRabbitProducer(RabbitProducer):
-
-    def __init__(self):
-        super().__init__('')
+class LocalEventProducer(EventProducer):
 
     async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
         logger.info(f'Stubbed. Sending the event with body={entity_uuid} to routing key={routing_key}')
+
+
+def get_event_producer() -> EventProducer:
+    return EventProducer.get_instance()
+
+
+def get_local_event_producer() -> EventProducer:
+    return LocalEventProducer()

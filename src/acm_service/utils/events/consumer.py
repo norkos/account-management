@@ -1,41 +1,41 @@
 import logging
 from typing import Callable
-import asyncio
 
-from aio_pika import connect_robust, ExchangeType
-from aio_pika.abc import AbstractIncomingMessage
+from aio_pika import ExchangeType
+from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.controllers.agent_controller import AgentController
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
 from acm_service.sql_app.database import async_session
-from acm_service.dependencies import get_rabbit_producer
+from acm_service.utils.events.producer import get_event_producer
+from acm_service.utils.env import ENCODING
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
 def decode(message: AbstractIncomingMessage) -> str:
-    return message.body.decode('utf-8')
+    return message.body.decode(ENCODING)
 
 
-class Consumer:
-    def __init__(self, url: str):
-        self._url = url
+class EventConsumer:
+
+    instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if EventConsumer.instance is None:
+            EventConsumer.instance = EventConsumer()
+        return EventConsumer.instance
+
+    def __init__(self):
         self._connection = None
 
-    async def wait_for_rabbit(self, loop, connection_timeout: int) -> None:
-        while True:
-            try:
-                connection = await connect_robust(self._url, loop=loop)
-                await connection.close()
-                logger.info('RabbitMq is alive !')
-                return
-            except Exception as _error:
-                logger.info(f'Waiting for RabbitMQ to be alive. Sleeping {connection_timeout} seconds before retry.')
-                await asyncio.sleep(connection_timeout)
+    def attach_to_connection(self, event_broker: AbstractRobustConnection | None):
+        self._connection = event_broker
 
-    async def block_agent(self, message: AbstractIncomingMessage, ) -> None:
+    async def _block_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
@@ -44,11 +44,11 @@ class Consumer:
                 async with session.begin():
                     agents = AgentDAL(session)
                     accounts = AccountDAL(session)
-                    controller = AgentController(agents, accounts, get_rabbit_producer())
+                    controller = AgentController(agents, accounts, get_event_producer())
                     result = await controller.block_agent(uuid)
                     logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
-    async def unblock_agent(self, message: AbstractIncomingMessage, ) -> None:
+    async def _unblock_agent(self, message: AbstractIncomingMessage, ) -> None:
         async with message.process():
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
@@ -57,23 +57,24 @@ class Consumer:
                 async with session.begin():
                     agents = AgentDAL(session)
                     accounts = AccountDAL(session)
-                    controller = AgentController(agents, accounts, get_rabbit_producer())
+                    controller = AgentController(agents, accounts, get_event_producer())
                     result = await controller.unblock_agent(uuid)
                     logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
-    async def consume_block_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key='block.agent', callback=self.block_agent)
+    async def consume_block_agent(self) -> None:
+        await self.consume(binding_key='block.agent', callback=self._block_agent)
 
-    async def consume_unblock_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key='unblock.agent', callback=self.unblock_agent)
+    async def consume_unblock_agent(self) -> None:
+        await self.consume(binding_key='unblock.agent', callback=self._unblock_agent)
 
-    async def consume(self, loop, binding_key: str, callback: Callable) -> None:
+    async def consume(self, binding_key: str, callback: Callable) -> None:
+        if self._connection is None:
+            logger.warning('Cannot bind for the queues due to missing broker connection')
+            return
+
         queue_name = f'{binding_key}_queue'
         topic_name = 'topic_compliance'
 
-        self._connection = await connect_robust(self._url, loop=loop)
         channel = await self._connection.channel()
         exchange = await channel.declare_exchange(name=topic_name, type=ExchangeType.TOPIC)
         queue = await channel.declare_queue(queue_name, durable=True)
@@ -84,3 +85,7 @@ class Consumer:
     async def close(self):
         if self._connection:
             await self._connection.close()
+
+
+def get_rabbit_consumer() -> EventConsumer:
+    return EventConsumer.get_instance()

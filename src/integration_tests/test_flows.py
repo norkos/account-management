@@ -190,7 +190,7 @@ def test_block_and_unblock_agent_via_rest():
 def test_create_account_with_agents():
     # given
     rest = RestClient(api_token=TOKEN, api_url=URL)
-    how_many_agents = 5
+    how_many_agents = 20
     region = 'emea'
 
     try:

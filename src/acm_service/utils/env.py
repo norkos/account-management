@@ -3,9 +3,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+ENCODING = 'utf-8'
 API_TOKEN = os.environ.get('AUTH_TOKEN', '')
 TWO_FA = os.environ.get('TWO_FA', '')
+
 CLOUDAMQP_URL = os.environ.get('CLOUDAMQP_URL', '')
+CLOUDAMQP_RETRIES = int(os.environ.get('CLOUDAMQP_RETRIES', 1))
+CLOUDAMQP_TIMEOUT = int(os.environ.get('CLOUDAMQP_TIMEOUT', 0))
+
 SCOUT_KEY = os.environ.get('SCOUT_KEY', '')
 
 PORT = os.environ.get('PORT', '8080')

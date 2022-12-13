@@ -1,4 +1,3 @@
-import asyncio
 from logging.config import dictConfig
 import logging
 
@@ -12,11 +11,14 @@ from scout_apm.async_.starlette import ScoutMiddleware
 
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
-from acm_service.dependencies import get_local_rabbit_producer, get_rabbit_producer
-from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN, CLOUDAMQP_URL
+from acm_service.dependencies import get_event_broker_connection
+from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
-from acm_service.utils.events.consumer import Consumer
+from acm_service.utils.events.connection import disconnect_event_broker
+from acm_service.utils.events.producer import get_event_producer, get_local_event_producer
+from acm_service.utils.events.consumer import get_rabbit_consumer
+
 
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
@@ -38,8 +40,6 @@ Config.set(
 app.add_middleware(ScoutMiddleware)
 add_pagination(app)
 
-consumer = Consumer(CLOUDAMQP_URL)
-
 
 @app.on_event("startup")
 async def startup():
@@ -52,18 +52,27 @@ async def startup():
         logger.error('Missing TWO_FA in your env variables')
 
     if ENABLE_EVENTS:
-        loop = asyncio.get_running_loop()
-        await consumer.wait_for_rabbit(loop, connection_timeout=5)
-        await consumer.consume_block_agent(loop)
-        await consumer.consume_unblock_agent(loop)
+        logger.info('Connecting to event broker')
+        event_broker = await get_event_broker_connection()
+
+        logger.info('Subscribing to consume the events')
+        consumer = get_rabbit_consumer()
+        consumer.attach_to_connection(event_broker)
+        await consumer.consume_block_agent()
+        await consumer.consume_unblock_agent()
+
+        logger.info('Preparing event producer')
+        producer = get_event_producer()
+        producer.attach_to_connection(event_broker)
     else:
-        app.dependency_overrides[get_rabbit_producer] = get_local_rabbit_producer
+        app.dependency_overrides[get_event_producer] = get_local_event_producer
         logger.info('Dispatching events was temporary disabled')
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await consumer.close()
+    if ENABLE_EVENTS:
+        await disconnect_event_broker()
 
 
 @app.get("/")

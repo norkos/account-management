@@ -1,12 +1,15 @@
+import asyncio
+
+from aio_pika.abc import AbstractRobustConnection
 from fastapi import Header
 
 from acm_service.sql_app.database import async_session
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
-from acm_service.utils.env import CLOUDAMQP_URL
-from acm_service.utils.events.producer import RabbitProducer, LocalRabbitProducer
+
 from acm_service.utils.env import API_TOKEN, TWO_FA
 from acm_service.utils.http_exceptions import raise_bad_request
+from acm_service.utils.events.connection import connect_to_event_broker
 
 
 async def get_account_dal() -> AccountDAL:
@@ -21,12 +24,12 @@ async def get_agent_dal() -> AgentDAL:
             yield AgentDAL(session)
 
 
-def get_rabbit_producer() -> RabbitProducer:
-    return RabbitProducer(CLOUDAMQP_URL)
+async def get_event_broker_connection() -> AbstractRobustConnection | None:
+    return await connect_to_event_broker(asyncio.get_event_loop())
 
 
-def get_local_rabbit_producer() -> RabbitProducer:
-    return LocalRabbitProducer()
+async def get_local_event_broker_connection() -> None:
+    return None
 
 
 def get_token_header(x_token: str = Header()) -> None:

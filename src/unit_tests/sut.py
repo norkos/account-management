@@ -2,13 +2,13 @@ import asyncio
 
 from fastapi.testclient import TestClient
 
-
 from main import app
 
-from acm_service.dependencies import get_account_dal, get_agent_dal, get_rabbit_producer
+from acm_service.dependencies import get_account_dal, get_agent_dal
+from acm_service.utils.events.producer import get_event_producer
+
 from unit_tests.utils import AccountDALStub, RabbitProducerStub, AgentDALStub
 
-client = TestClient(app)
 account_dal = AccountDALStub()
 agent_dal = AgentDALStub()
 
@@ -30,6 +30,7 @@ def reset_database():
     asyncio.run(agent_dal.delete_all())
 
 
+client = TestClient(app)
 app.dependency_overrides[get_agent_dal] = override_agent_dal
 app.dependency_overrides[get_account_dal] = override_account_dal
-app.dependency_overrides[get_rabbit_producer] = override_get_rabbit_producer
+app.dependency_overrides[get_event_producer] = override_get_rabbit_producer

@@ -3,14 +3,14 @@ import logging
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.sql_app.account_dal import AccountDAL
 from acm_service.sql_app.agent_dal import AgentDAL
-from acm_service.utils.events.producer import RabbitProducer
+from acm_service.utils.events.producer import EventProducer
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
 class AgentController:
 
-    def __init__(self, agents: AgentDAL, accounts: AccountDAL, rabbit_producer: RabbitProducer):
+    def __init__(self, agents: AgentDAL, accounts: AccountDAL, rabbit_producer: EventProducer):
         self._agents = agents
         self._accounts = accounts
         self._producer = rabbit_producer
