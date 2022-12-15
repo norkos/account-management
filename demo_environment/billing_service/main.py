@@ -44,14 +44,14 @@ async def startup():
     loop = asyncio.get_running_loop()
     await consumer.wait_for_rabbit(loop, connection_timeout=5)
 
-    await consumer.consume_create_agent(loop)
-    await consumer.consume_delete_agent(loop)
+    await consumer.consume_create_agent()
+    await consumer.consume_delete_agent()
 
-    await consumer.consume_create_account(loop)
-    await consumer.consume_delete_account(loop)
+    await consumer.consume_create_account()
+    await consumer.consume_delete_account()
 
-    await consumer.consume_block_agent(loop)
-    await consumer.consume_unblock_agent(loop)
+    await consumer.consume_block_agent()
+    await consumer.consume_unblock_agent()
 
 
 @app.on_event("shutdown")

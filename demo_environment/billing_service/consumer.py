@@ -23,8 +23,7 @@ class Consumer:
     async def wait_for_rabbit(self, loop, connection_timeout: int) -> None:
         while True:
             try:
-                connection = await connect_robust(self._url, loop=loop)
-                await connection.close()
+                self._connection = await connect_robust(self._url, loop=loop)
                 print('RabbitMq is alive !')
                 return
             except Exception:
@@ -69,39 +68,32 @@ class Consumer:
             self._deleted_accounts.append(uuid)
 
     # noinspection DuplicatedCode
-    async def consume(self, loop, binding_key: str, callback: Callable) -> None:
+    async def consume(self, binding_key: str, callback: Callable) -> None:
         queue_name = f'{binding_key}_queue'
 
-        self._connection = await connect_robust(self._url, loop=loop)
         channel = await self._connection.channel()
         exchange = await channel.declare_exchange(name='topic_customers', type=ExchangeType.TOPIC)
         queue = await channel.declare_queue(queue_name, durable=True)
         await queue.bind(exchange, routing_key=binding_key)
         await queue.consume(callback)
 
-    async def consume_create_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'create.agent.{self._region}', callback=self.create_agent)
+    async def consume_create_agent(self) -> None:
+        await self.consume(binding_key=f'create.agent.{self._region}', callback=self.create_agent)
 
-    async def consume_delete_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'delete.agent.{self._region}', callback=self.delete_agent)
+    async def consume_delete_agent(self) -> None:
+        await self.consume(binding_key=f'delete.agent.{self._region}', callback=self.delete_agent)
 
-    async def consume_create_account(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'create.account.{self._region}.#', callback=self.create_account)
+    async def consume_create_account(self) -> None:
+        await self.consume(binding_key=f'create.account.{self._region}.#', callback=self.create_account)
 
-    async def consume_delete_account(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'delete.account.{self._region}.#', callback=self.delete_account)
+    async def consume_delete_account(self) -> None:
+        await self.consume(binding_key=f'delete.account.{self._region}.#', callback=self.delete_account)
 
-    async def consume_block_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'block.agent.{self._region}', callback=self.block_agent)
+    async def consume_block_agent(self) -> None:
+        await self.consume(binding_key=f'block.agent.{self._region}', callback=self.block_agent)
 
-    async def consume_unblock_agent(self, loop) -> None:
-        await self.consume(loop,
-                           binding_key=f'unblock.agent.{self._region}', callback=self.unblock_agent)
+    async def consume_unblock_agent(self) -> None:
+        await self.consume(binding_key=f'unblock.agent.{self._region}', callback=self.unblock_agent)
 
     @property
     def created_agents(self) -> [str]:

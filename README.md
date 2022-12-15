@@ -37,28 +37,25 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
   - under `demo_environment/billing_service` you get consumer for accounts/agents Topics (user story 2.)
   - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
   - under `demo_environment/vip_customer_service` you get consumer for VIP accounts (user story 4.)
-- Docker to make a smart environment: 
-  - you can have your own e2e environment locally, 
-  - or run the project with PyCharm with `main.py`, 
-  - or deploy container into Heroku or ECS
 - telemetry
    - Papertrail ![Papertrail](doc/papertrail.JPG) 
    - Scout ![Scout](doc/scout.JPG) 
    - Liberato ![Liberato](doc/liberato.JPG) 
 
 ### TODO list
-- https://locust.io/ to make load testing
+- https://locust.io/ to make real load testing
 - play more with Heroku
   - check what resilience can be supported by Heroku
-  - check if vertical/horizontal scaling can be supported by Heroku
+  - check if scaling can be supported by Heroku
   - Redis ?
 - deploy this to Amazon ECS
-- pagination for DB synchronized with FastAPI pagination but leaving abstraction layer for the DB (to be deployed as Open Source)
+- when using FastAPI pagination it would be great to make also pagination for DB requests. Open source project is not supporting this out of the box.
 
 ### How to run it
 - to have all the environment in one place `docker-compose -f docker-compose-demo.yml up`
-  - to run DB migrations execute CLI on `backend` docker image by running `migrate_db.sh`
-  - REST is exposed by Swagger in http://localhost:9090/_swagger
+- to run DB migrations execute CLI on `backend` docker image by running `migrate_db.sh`
+- REST is exposed by Swagger in http://localhost:9090/_swagger
+- feel free to run this also with `main.py` after creating your venv
 
 ### How to test it
 - for unit tests: 
@@ -66,7 +63,6 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
 - for integration tests: 
   - `docker-compose -f docker-compose-integration.yml up`
   - run DB migrations execute CLI on `backend` docker image by running `migrate_db.sh`
-  - execute command on `rabbitmq` docker: `rabbitmqctl set_user_tags guest administrator`
   - `pytest src/integration_tests/test_flows.py`
 
 
@@ -76,17 +72,20 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
   - heroku container:login
   - heroku create
   - heroku container:push web
-  - define ENV variables in Heroku
-       - create `AUTH_TOKEN` with token details needed to communicate with RESTAPI
-       - create `TWO_FA` with token needed to erase the DB
-       - if you want to see debug logs set `DEBUG_LOGGER_LEVEL` into  `True`
-       - if you want FastAPI to be verbose when sending response with code 500 set `DEBUG_REST` into `True`
   - install extensions in Heroku
-    - (mandatory) postgres
-       - create `ASYNC_DB_URL` in heroku EVN variables
-    - (optional) rabbitMQ
-       - set `ENABLE_EVENTS` to True in heroku EVN variable and create `CLOUDAMQP_URL` in heroku EVN variables 
+    - (mandatory) Postgres
+    - (optional) Rabbit MQ
     - (optional) Scout
+  - define ENV variables in Heroku (example values are in `backend` under `docker-compose-demo.yml` )
+     - `AUTH_TOKEN` -> token needed to communicate with RESTAPI 
+     - `TWO_FA`-> with token needed to erase the database 
+     - `ENABLE_EVENTS` -> would you like to make use of events 
+       - `CLOUDAMQP_URL` -> RabbitMQ event broker URL
+       - `CLOUDAMQP_RETRIES` -> retries for the communication with event broker 
+       - `CLOUDAMQP_TIMEOUT` -> timeout for the communication with the event broker
+     - `ASYNC_DB_URL` -> link to async Postgres DB
+     - `DEBUG_LOGGER_LEVEL` -> do you want to have debug logs ?
+     - `DEBUG_REST` -> in case of response 500 do you want to have extra logs ?
   - heroku container:release web
   - open https://{your_heroku_app}/_swagger and play using `AUTH_TOKEN`
   

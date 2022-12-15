@@ -5,20 +5,20 @@ from aio_pika import ExchangeType, Message, DeliveryMode
 from aio_pika.abc import AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.utils.env import ENCODING
+from acm_service.utils.env import ENCODING, CLOUDAMQP_RETRIES, CLOUDAMQP_TIMEOUT
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
-def decorate_event(coro):
+def decorate_event(send_event):
     async def wrapper(*args, **kwargs):
-        retries = 3
-        time_out = 1
+        retries = CLOUDAMQP_RETRIES
+        time_out = CLOUDAMQP_TIMEOUT
         retry = 0
         ex = None
         while retry < retries:
             try:
-                return await coro(*args, **kwargs)
+                return await send_event(*args, **kwargs)
             except BaseException as exc:
                 ex = exc
                 retry += 1
@@ -26,7 +26,6 @@ def decorate_event(coro):
                 await asyncio.sleep(retry * time_out)
         logger.exception('Event was not sent. Exception %s', ex)
         raise Exception('Event was not sent')
-
     return wrapper
 
 

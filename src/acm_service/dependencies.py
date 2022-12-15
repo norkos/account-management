@@ -28,10 +28,6 @@ async def get_event_broker_connection() -> AbstractRobustConnection | None:
     return await connect_to_event_broker(asyncio.get_event_loop())
 
 
-async def get_local_event_broker_connection() -> None:
-    return None
-
-
 def get_token_header(x_token: str = Header()) -> None:
     if x_token != API_TOKEN:
         raise_bad_request("Invalid X-Token header")

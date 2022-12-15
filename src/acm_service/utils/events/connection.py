@@ -17,7 +17,6 @@ async def connect_to_event_broker(loop, url: str = CLOUDAMQP_URL, connection_tim
     global connection
     if connection:
         return connection
-    logger.info(f'{connection_timeout} and {retries}')
     for x in range(retries):
         try:
             connection = await connect_robust(CLOUDAMQP_URL, loop=loop)

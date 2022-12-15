@@ -10,10 +10,10 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 
 class AgentController:
 
-    def __init__(self, agents: AgentDAL, accounts: AccountDAL, rabbit_producer: EventProducer):
+    def __init__(self, agents: AgentDAL, accounts: AccountDAL, event_producer: EventProducer):
         self._agents = agents
         self._accounts = accounts
-        self._producer = rabbit_producer
+        self._producer = event_producer
 
     async def block_agent(self, agent_uuid: str) -> bool:
         logger.info(f'Getting agent {agent_uuid}')
