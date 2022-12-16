@@ -23,10 +23,9 @@ The goal of the project was to play with the Microservice architecture and impro
 - pydantic
 - types
 - decorators
-- unit tests realized with pytest
+- tests realized with pytest
   - fixtures
   - mocks
-- integration tests
 - event handling implemented by RabbitMQ used in an async way using Topics
   - under `demo_environment/billing_service` you get consumer for accounts/agents Topics (user story 2.)
   - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
