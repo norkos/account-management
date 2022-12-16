@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from sqlalchemy import delete, update
 from sqlalchemy.orm import Session
 
-from acm_service.sql_app.models import Agent
+from acm_service.data_base.models import Agent
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 

@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload, joinedload, Session
 from sqlalchemy.future import select
 from sqlalchemy import delete, update
 
-from acm_service.sql_app.models import Account
+from acm_service.data_base.models import Account
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
 

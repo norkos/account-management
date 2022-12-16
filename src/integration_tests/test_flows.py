@@ -1,6 +1,7 @@
 import asyncio
 
 from integration_tests.consumer import Consumer
+from integration_tests.producer import Producer
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
 from integration_tests.env import TOKEN, URL, RABBIT_MQ
 
@@ -32,6 +33,18 @@ async def create_accounts(api: RestClient, how_many_accounts: int) -> None:
 
 async def time_for_lost_events():
     await asyncio.sleep(0.5)
+
+
+class ProducerWrapper:
+
+    def __init__(self):
+        self._producer = Producer(url=RABBIT_MQ)
+
+    async def unblock_agent(self, agent_uuid):
+        await self._producer.unblock_agent(agent_uuid)
+
+    async def block_agent(self, agent_uuid):
+        await self._producer.block_agent(agent_uuid)
 
 
 class ConsumerWrapper:
@@ -91,7 +104,7 @@ class ConsumerWrapper:
         assert set(accounts) == set(self._consumer.created_vip_accounts)
 
 
-class EventHandler:
+class ConsumerEventHandler:
     def __init__(self, region: str):
         self._region = region
         self._consumer = None
@@ -108,8 +121,20 @@ class EventHandler:
         await self._consumer.close()
 
 
+class ProducerEventHandler:
+    def __init__(self):
+        self._producer = None
+
+    async def __aenter__(self) -> ProducerWrapper:
+        self._producer = ProducerWrapper()
+        return self._producer
+
+    async def __aexit__(self, exc_t, exc_v, exc_tb):
+        pass
+
+
 async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: str, vip: bool) -> None:
-    async with EventHandler(region) as consumer:
+    async with ConsumerEventHandler(region) as consumer:
         account_name, email = generate_account_details()
         account_uuid = await api.create_account(account_name, email, region, vip)
 
@@ -151,8 +176,37 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: st
         await consumer.assert_deleted_agents(agents)
 
 
+async def _test_block_and_unblock_agent_via_event(api: RestClient, region: str) -> None:
+    async with ConsumerEventHandler(region) as consumer:
+        async with ProducerEventHandler() as producer:
+
+            account_name, account_email = generate_account_details()
+            account_uuid = await api.create_account(account_name, account_email, region)
+
+            agent_name, agent_email = generate_agent_details()
+            agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
+
+            # when
+            await producer.block_agent(agent_uuid)
+            await asyncio.sleep(0.5)
+
+            # then
+            agent = await api.get_agent(account_uuid, agent_uuid)
+            assert agent['blocked']
+            await consumer.assert_blocked_agents([agent_uuid])
+
+            # when
+            await producer.unblock_agent(agent_uuid)
+            await asyncio.sleep(0.5)
+
+            # then
+            agent = await api.get_agent(account_uuid, agent_uuid)
+            assert not agent['blocked']
+            await consumer.assert_blocked_agents([])
+
+
 async def _test_block_and_unblock_agent_via_rest(api: RestClient, region: str) -> None:
-    async with EventHandler(region) as consumer:
+    async with ConsumerEventHandler(region) as consumer:
         account_name, account_email = generate_account_details()
         account_uuid = await api.create_account(account_name, account_email, region)
 
@@ -187,10 +241,21 @@ def test_block_and_unblock_agent_via_rest():
         asyncio.run(remove_all_accounts(rest))
 
 
+def test_block_and_unblock_agent_via_events():
+    # given
+    rest = RestClient(api_token=TOKEN, api_url=URL)
+    region = 'nam'
+
+    try:
+        asyncio.run(_test_block_and_unblock_agent_via_event(rest, region))
+    finally:
+        asyncio.run(remove_all_accounts(rest))
+
+
 def test_create_account_with_agents():
     # given
     rest = RestClient(api_token=TOKEN, api_url=URL)
-    how_many_agents = 20
+    how_many_agents = 3
     region = 'emea'
 
     try:

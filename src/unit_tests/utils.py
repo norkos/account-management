@@ -4,10 +4,10 @@ from typing import List
 
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.orm import Session
-from acm_service.sql_app.account_dal import AccountDAL
-from acm_service.sql_app.agent_dal import AgentDAL
-from acm_service.sql_app.models import Account, Agent
-from acm_service.utils.events.producer import EventProducer
+from acm_service.data_base.account_dal import AccountDAL
+from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.models import Account, Agent
+from acm_service.events.producer import EventProducer
 
 
 def generate_random_mail() -> str:

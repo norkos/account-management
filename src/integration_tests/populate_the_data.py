@@ -11,7 +11,7 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int) -> None:
 
     for agent_number in range(amount_of_agents):
         agent_name, agent_email = generate_agent_details()
-        await api.create_agent(account_uuid, agent_name, agent_number + agent_email)
+        await api.create_agent(account_uuid, agent_name, str(agent_number) + agent_email)
 
 
 async def async_test_traffic_model(how_many_accounts: int, how_many_agents_per_account: int):
@@ -24,7 +24,7 @@ async def async_test_traffic_model(how_many_accounts: int, how_many_agents_per_a
 
 
 def test_populate_low_amount_of_the_data():
-    how_many_accounts = 2
+    how_many_accounts = 10
     how_many_agents_per_account = 5
     asyncio.run(async_test_traffic_model(how_many_accounts, how_many_agents_per_account))
 

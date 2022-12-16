@@ -4,9 +4,11 @@ import asyncio
 from aio_pika import ExchangeType, connect_robust
 from aio_pika.abc import AbstractIncomingMessage
 
+from acm_service.utils.env import ENCODING
+
 
 def decode(message: AbstractIncomingMessage) -> str:
-    return message.body.decode('utf-8')
+    return message.body.decode(ENCODING)
 
 
 class Consumer:

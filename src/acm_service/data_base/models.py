@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
-from acm_service.sql_app.database import Base
+from acm_service.data_base.database import Base
 
 
 class Agent(Base):

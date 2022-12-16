@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-import acm_service.sql_app.schemas
+import acm_service.data_base.schemas
 
 revision = 'e3ce0f243521'
 down_revision = '0f71bbb218e0'

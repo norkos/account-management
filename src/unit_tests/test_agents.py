@@ -7,7 +7,7 @@ import pytest
 from requests import Response
 
 from acm_service.utils.env import API_TOKEN, TWO_FA
-from acm_service.sql_app.schemas import Agent, Account
+from acm_service.data_base.schemas import Agent, Account
 
 from unit_tests.utils import RabbitProducerStub, generate_random_mail
 from unit_tests.sut import client, reset_database, account_dal

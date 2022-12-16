@@ -15,9 +15,9 @@ from acm_service.dependencies import get_event_broker_connection
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
-from acm_service.utils.events.connection import disconnect_event_broker
-from acm_service.utils.events.producer import get_event_producer, get_local_event_producer
-from acm_service.utils.events.consumer import get_rabbit_consumer
+from acm_service.events.connection import disconnect_event_broker
+from acm_service.events.producer import get_event_producer, get_local_event_producer
+from acm_service.events.consumer import get_rabbit_consumer
 
 
 dictConfig(log_config)
@@ -26,7 +26,7 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 app = FastAPI(
     debug=DEBUG_REST,
     title='account-management-service',
-    version='1.0',
+    version='1.1',
     docs_url='/_swagger'
 )
 app.include_router(accounts.router)

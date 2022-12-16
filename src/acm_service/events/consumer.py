@@ -6,9 +6,11 @@ from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.controllers.agent_controller import AgentController
-from acm_service.utils.events.producer import get_event_producer
+from acm_service.events.producer import get_event_producer
 from acm_service.utils.env import ENCODING
-from acm_service.dependencies import get_agent_dal, get_account_dal
+from acm_service.data_base.database import async_session
+from acm_service.data_base.account_dal import AccountDAL
+from acm_service.data_base.agent_dal import AgentDAL
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -39,11 +41,13 @@ class EventConsumer:
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
 
-            controller = AgentController(agents=get_agent_dal(),
-                                         accounts=get_account_dal(),
-                                         event_producer=get_event_producer())
-            result = await controller.block_agent(uuid)
-            logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
+            async with async_session() as session:
+                async with session.begin():
+                    controller = AgentController(agents=AgentDAL(session),
+                                                 accounts=AccountDAL(session),
+                                                 event_producer=get_event_producer())
+                    result = await controller.block_agent(uuid)
+                    logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
     @staticmethod
     async def _unblock_agent(message: AbstractIncomingMessage, ) -> None:
@@ -51,11 +55,13 @@ class EventConsumer:
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
 
-            controller = AgentController(agents=get_agent_dal(),
-                                         accounts=get_account_dal(),
-                                         event_producer=get_event_producer())
-            result = await controller.unblock_agent(uuid)
-            logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
+            async with async_session() as session:
+                async with session.begin():
+                    controller = AgentController(agents=AgentDAL(session),
+                                                 accounts=AccountDAL(session),
+                                                 event_producer=get_event_producer())
+                    result = await controller.unblock_agent(uuid)
+                    logger.info(f'Receiving event to unblock agent: {uuid} with result: {result}')
 
     async def consume_block_agent(self) -> None:
         await self.consume(binding_key='block.agent', callback=EventConsumer._block_agent)

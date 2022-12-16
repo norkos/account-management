@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from main import app
 
 from acm_service.dependencies import get_account_dal, get_agent_dal
-from acm_service.utils.events.producer import get_event_producer
+from acm_service.events.producer import get_event_producer
 
 from unit_tests.utils import AccountDALStub, RabbitProducerStub, AgentDALStub
 

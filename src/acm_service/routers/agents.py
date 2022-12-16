@@ -5,15 +5,15 @@ from fastapi import Depends
 from fastapi import APIRouter, status, Response
 from fastapi_pagination import paginate
 
-from acm_service.sql_app.schemas import Agent, AgentCreate
+from acm_service.data_base.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
 from acm_service.dependencies import get_agent_dal, get_token_header, get_2fa_token_header, get_account_dal
-from acm_service.sql_app.agent_dal import AgentDAL
+from acm_service.data_base.agent_dal import AgentDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.utils.events.producer import EventProducer, get_event_producer
+from acm_service.events.producer import EventProducer, get_event_producer
 from acm_service.utils.pagination import Page
 from acm_service.controllers.agent_controller import AgentController
-from acm_service.sql_app.account_dal import AccountDAL
+from acm_service.data_base.account_dal import AccountDAL
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
