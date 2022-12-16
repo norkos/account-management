@@ -15,10 +15,6 @@ The goal of the project was to play with the Microservice architecture and impro
 ![Papertrail](doc/arch.jpeg)
 https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_loc=-176%2C-119%2C3072%2C1551%2CCFRzE~qEaxOQ&invitationId=inv_700a331f-39a6-41a5-a14a-7c5007f38322
 
-#### Data model
-<img src="doc/data.JPG" height="300"></img>
-- Agent e-mail is unique among all Agents from all Accounts
-- Account e-mail is unique among all others Accounts 
 
 ### What is used here?
 - FastAPI
@@ -38,9 +34,9 @@ https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_
   - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
   - under `demo_environment/vip_customer_service` you get consumer for VIP accounts (user story 4.)
 - telemetry
-   - Papertrail ![Papertrail](doc/papertrail.JPG) 
-   - Scout ![Scout](doc/scout.JPG) 
-   - Liberato ![Liberato](doc/liberato.JPG) 
+   - Papertrail
+   - Scout
+   - Liberato
 
 ### TODO list
 - https://locust.io/ to make real load testing
