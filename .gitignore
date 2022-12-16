@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 .idea/
 
+do_deployment.sh
+
 # db
 sql_app.db
 test_*.db

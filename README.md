@@ -16,6 +16,7 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ### What is used here?
 - FastAPI
+  - ![img.png](doc/img.png)
   - pagination for REST requests
 - Postgres
   - asyncio
@@ -83,3 +84,4 @@ The goal of the project was to play with the Microservice architecture and impro
   - open https://{your_heroku_app}/_swagger and play using `AUTH_TOKEN`
   
 ### Have fun ;)
+![img.png](doc/demo.jpg)
