@@ -11,7 +11,6 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ### Architecture
 
-#### Target Diagram
 ![Papertrail](doc/arch.jpeg)
 
 
