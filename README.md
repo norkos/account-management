@@ -13,7 +13,6 @@ The goal of the project was to play with the Microservice architecture and impro
 
 #### Target Diagram
 ![Papertrail](doc/arch.jpeg)
-https://lucid.app/lucidchart/388b7cea-029a-46ae-95e5-0c50148fb8cb/edit?viewport_loc=-176%2C-119%2C3072%2C1551%2CCFRzE~qEaxOQ&invitationId=inv_700a331f-39a6-41a5-a14a-7c5007f38322
 
 
 ### What is used here?
