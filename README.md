@@ -38,6 +38,7 @@ The goal of the project was to play with the Microservice architecture and impro
    - Liberato
 
 ### TODO list
+- fix DB bottleneck visible in load tests
 - extend load tests to inject events
 - play more with Heroku
   - check what resilience can be supported by Heroku
