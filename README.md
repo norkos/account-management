@@ -27,6 +27,7 @@ The goal of the project was to play with the Microservice architecture and impro
 - tests realized with pytest
   - fixtures
   - mocks
+  - load tests with Locust ![img.png](doc/locust.jpg)
 - event handling implemented by RabbitMQ used in an async way using Topics
   - under `demo_environment/billing_service` you get consumer for accounts/agents Topics (user story 2.)
   - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
@@ -37,7 +38,7 @@ The goal of the project was to play with the Microservice architecture and impro
    - Liberato
 
 ### TODO list
-- https://locust.io/ to make real load testing
+- extend load tests to inject events
 - play more with Heroku
   - check what resilience can be supported by Heroku
   - check if scaling can be supported by Heroku
@@ -58,6 +59,9 @@ The goal of the project was to play with the Microservice architecture and impro
   - `docker-compose -f docker-compose-integration.yml up`
   - run DB migrations execute CLI on `backend` docker image by running `migrate_db.sh`
   - `pytest src/integration_tests/test_flows.py`
+- for load tests:
+  - same as for integration tests
+  - `cd src && locust -f .\integration_tests\test_load.py`
 
 
 ### How to deploy it

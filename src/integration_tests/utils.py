@@ -8,6 +8,16 @@ import names
 HTTP_RESPONSE_ACCEPT = {200, 202}
 
 
+def generate_region() -> str:
+    regions = ['nam', 'emea', 'apac']
+    return random.choice(regions)
+
+
+def generate_is_vip() -> str:
+    vips = ['True', 'False']
+    return random.choice(vips)
+
+
 def generate_account_details() -> (str, str):
     account_name_raw = namegenerator.gen()
     account_name = account_name_raw.replace('-', ' ')
@@ -64,8 +74,6 @@ class RestClient:
             return (await response.json())['items']
 
     async def create_account(self, name: str, email: str, region: str = None, vip: bool = None) -> str | None:
-        regions = ['nam', 'emea', 'apac']
-        vips = ['True', 'False']
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token,
                                           'accept': 'application/json',
@@ -74,8 +82,8 @@ class RestClient:
             response = await session.post(f'{self._url}/accounts', data=json.dumps({
                 'name': name,
                 'email': email,
-                'region': region if region else random.choice(regions),
-                'vip': vip if vip is not None else random.choice(vips)
+                'region': region if region else generate_region(),
+                'vip': vip if vip is not None else generate_is_vip()
             }))
 
             response_status_code = response.status.real

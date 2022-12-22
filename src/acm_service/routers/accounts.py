@@ -37,7 +37,7 @@ async def read_account(account_id: str, accounts: AccountDAL = Depends(get_accou
     return db_account
 
 
-@router.post('/generate_company_raport/{account_id}', response_model=schemas.Account)
+@router.post('/generate_company_report/{account_id}', response_model=schemas.Account)
 async def read_account_with_agents(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
     db_account = await accounts.get_with_agents(account_id)
     if db_account is None:
