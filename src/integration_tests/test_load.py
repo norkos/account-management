@@ -11,11 +11,20 @@ lock = threading.Lock()
 
 def locker(fun):
     def wrapper(*args, **kwargs):
+        result = None
+        exception = None
         try:
             lock.acquire()
-            return fun(*args, **kwargs)
+            result = fun(*args, **kwargs)
+        except BaseException as ex:
+            exception = ex
         finally:
             lock.release()
+
+        if exception:
+            raise exception
+
+        return result
     return wrapper
 
 
