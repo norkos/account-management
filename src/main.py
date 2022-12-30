@@ -40,6 +40,30 @@ Config.set(
 app.add_middleware(ScoutMiddleware)
 add_pagination(app)
 
+# https://www.cloudamqp.com/blog/part1-rabbitmq-best-practice.html -> keep connection separated
+consumer_connection = None
+producer_connection = None
+
+
+async def prepare_event_consumer():
+    logger.info('Connecting to event broker')
+    global consumer_connection
+    consumer_connection = await get_event_broker_connection()
+    consumer = get_rabbit_consumer()
+    consumer.attach_to_connection(consumer_connection)
+    await consumer.consume_block_agent()
+    await consumer.consume_unblock_agent()
+    logger.info('Subscribed to consume the events')
+
+
+async def prepare_event_producer():
+    logger.info('Preparing event producer')
+    global producer_connection
+    producer_connection = await get_event_broker_connection()
+    producer = get_event_producer()
+    producer.attach_to_connection(producer_connection)
+    logger.info('Event producer ready')
+
 
 @app.on_event("startup")
 async def startup():
@@ -52,18 +76,8 @@ async def startup():
         logger.error('Missing TWO_FA in your env variables')
 
     if ENABLE_EVENTS:
-        logger.info('Connecting to event broker')
-        event_broker = await get_event_broker_connection()
-
-        logger.info('Subscribing to consume the events')
-        consumer = get_rabbit_consumer()
-        consumer.attach_to_connection(event_broker)
-        await consumer.consume_block_agent()
-        await consumer.consume_unblock_agent()
-
-        logger.info('Preparing event producer')
-        producer = get_event_producer()
-        producer.attach_to_connection(event_broker)
+        await prepare_event_consumer()
+        await prepare_event_producer()
     else:
         app.dependency_overrides[get_event_producer] = get_local_event_producer
         logger.info('Dispatching events was temporary disabled')
@@ -72,7 +86,8 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown_event():
     if ENABLE_EVENTS:
-        await disconnect_event_broker()
+        await disconnect_event_broker(producer_connection)
+        await disconnect_event_broker(consumer_connection)
 
 
 @app.get("/")

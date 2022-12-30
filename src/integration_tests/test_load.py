@@ -3,7 +3,7 @@ import threading
 
 from locust import HttpUser, task, between
 
-from integration_tests.env import URL, TOKEN
+from integration_tests.env import TOKEN
 from integration_tests.utils import generate_account_details, generate_region, generate_is_vip, generate_agent_details
 
 lock = threading.Lock()
@@ -33,7 +33,6 @@ class LocustUser(HttpUser):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._url = URL
         self._header = TOKEN
         self._accounts = {}
 

@@ -33,9 +33,10 @@ def generate_agent_details() -> (str, str):
 
 class RestClient:
 
-    def __init__(self, api_token: str, api_url: str):
+    def __init__(self, api_token: str, api_url: str, two_fa: str = None):
         self._url = api_url
         self._token = api_token
+        self._two_fa = two_fa
 
     async def get_account(self, account_uuid: str) -> {}:
         async with aiohttp.ClientSession(headers=
@@ -43,25 +44,32 @@ class RestClient:
             response = await session.get(f'{self._url}/accounts/{account_uuid}')
             return await response.json()
 
-    async def get_agent(self, account: str, agent: str):
+    async def get_agent(self, account: str, agent: str) -> {}:
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token}) as session:
             response = await session.get(f'{self._url}/accounts/{account}/agents/{agent}')
             return await response.json()
 
-    async def get_agents(self, account: str):
+    async def get_agents(self, account: str) -> {}:
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token}) as session:
             response = await session.get(f'{self._url}/accounts/{account}/agents')
             return (await response.json())['items']
 
-    async def get_amount_of_agents(self, account: str):
+    async def get_amount_of_agents(self, account: str) -> int:
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token}) as session:
             response = await session.get(f'{self._url}/accounts/{account}/agents')
             return (await response.json())['total']
 
-    async def get_all_agents(self):
+    async def clear_accounts(self) -> None:
+        async with aiohttp.ClientSession(headers=
+                                         {'x-token': self._token,
+                                          'two-fa': self._two_fa},
+                                         ) as session:
+            await session.post(f'{self._url}/accounts/clear')
+
+    async def get_all_agents(self) -> int:
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token}) as session:
             response = await session.get(f'{self._url}/agents')

@@ -3,7 +3,13 @@ import asyncio
 from integration_tests.consumer import Consumer
 from integration_tests.producer import Producer
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
-from integration_tests.env import TOKEN, URL, RABBIT_MQ
+from integration_tests.env import TOKEN, URL, RABBIT_MQ, TWO_FA
+
+
+async def clear_db(api: RestClient) -> None:
+    await api.clear_accounts()
+    accounts = await api.get_accounts()
+    assert len(accounts) == 0
 
 
 async def remove_all_accounts(api: RestClient) -> None:
@@ -232,29 +238,29 @@ async def _test_block_and_unblock_agent_via_rest(api: RestClient, region: str) -
 
 def test_block_and_unblock_agent_via_rest():
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL)
+    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
     region = 'apac'
 
     try:
         asyncio.run(_test_block_and_unblock_agent_via_rest(rest, region))
     finally:
-        asyncio.run(remove_all_accounts(rest))
+        asyncio.run(clear_db(rest))
 
 
 def test_block_and_unblock_agent_via_events():
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL)
+    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
     region = 'nam'
 
     try:
         asyncio.run(_test_block_and_unblock_agent_via_event(rest, region))
     finally:
-        asyncio.run(remove_all_accounts(rest))
+        asyncio.run(clear_db(rest))
 
 
 def test_create_account_with_agents():
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL)
+    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
     how_many_agents = 3
     region = 'emea'
 
@@ -262,13 +268,13 @@ def test_create_account_with_agents():
         asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=True))
         asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=False))
     finally:
-        asyncio.run(remove_all_accounts(rest))
+        asyncio.run(clear_db(rest))
 
 
 def test_create_and_remove_accounts():
     # given
     how_many_accounts = 5
-    rest = RestClient(api_token=TOKEN, api_url=URL)
+    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
 
     try:
         asyncio.run(create_accounts(rest, how_many_accounts))

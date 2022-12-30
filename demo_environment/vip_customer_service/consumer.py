@@ -46,7 +46,7 @@ class Consumer:
         self._connection = await connect_robust(self._url, loop=loop)
         channel = await self._connection.channel()
         exchange = await channel.declare_exchange(name='topic_customers', type=ExchangeType.TOPIC)
-        queue = await channel.declare_queue(queue_name, durable=True)
+        queue = await channel.declare_queue(queue_name, durable=True, auto_delete=True)
         await queue.bind(exchange, routing_key=binding_key)
         await queue.consume(callback)
 

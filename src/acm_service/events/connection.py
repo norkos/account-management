@@ -9,14 +9,9 @@ from acm_service.utils.env import CLOUDAMQP_URL, CLOUDAMQP_RETRIES, CLOUDAMQP_TI
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
-connection = None
-
 
 async def connect_to_event_broker(loop, url: str = CLOUDAMQP_URL, connection_timeout: int = CLOUDAMQP_TIMEOUT,
                                   retries: int = CLOUDAMQP_RETRIES) -> AbstractRobustConnection | None:
-    global connection
-    if connection:
-        return connection
     for x in range(retries):
         try:
             connection = await connect_robust(CLOUDAMQP_URL, loop=loop)
@@ -30,6 +25,6 @@ async def connect_to_event_broker(loop, url: str = CLOUDAMQP_URL, connection_tim
     return None
 
 
-async def disconnect_event_broker():
-    if connection and isinstance(connection, AbstractRobustConnection):
+async def disconnect_event_broker(connection: AbstractRobustConnection | None):
+    if connection:
         await connection.close()

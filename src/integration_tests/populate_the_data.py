@@ -2,7 +2,7 @@ import asyncio
 
 from integration_tests.test_flows import remove_all_accounts
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
-from integration_tests.env import TOKEN, URL
+from integration_tests.env import TOKEN, URL, TWO_FA
 
 
 async def flow_of_the_account(api: RestClient, amount_of_agents: int) -> None:
@@ -36,5 +36,5 @@ def test_populate_big_data():
 
 
 def test_drop_the_data():
-    rest = RestClient(api_token=TOKEN, api_url=URL)
+    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
     asyncio.run(remove_all_accounts(rest))
