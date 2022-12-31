@@ -62,7 +62,7 @@ class LocustUser(HttpUser):
     def add_account(self, account: str):
         self._accounts[account] = []
 
-    @task(1)
+    @task(5)
     def create_account(self):
         account_name, email = generate_account_details()
         result = self.client.post(url=f'/accounts',
@@ -75,7 +75,7 @@ class LocustUser(HttpUser):
                                   )
         self.add_account(result.json()['id'])
 
-    @task(2)
+    @task(10)
     def create_agent(self):
         agent_name, agent_email = generate_agent_details()
         account_id = self.get_random_account()
@@ -88,27 +88,32 @@ class LocustUser(HttpUser):
 
         self.add_agent(account_id, result.json()['id'])
 
-    @task(4)
+    @task(15)
     def get_account(self):
         account_id = self.get_random_account()
         self.client.get(url=f'/accounts/{account_id}')
 
-    @task(5)
+    @task(30)
     def get_agent(self):
         account_id, agent_id = self.get_random_agent()
         self.client.get(url=f'/accounts/{account_id}/agents/{agent_id}')
 
-    @task(6)
+    @task(10)
+    def get_agents(self):
+        account_id = self.get_random_account()
+        self.client.get(url=f'/accounts/{account_id}/agents')
+
+    @task(20)
     def generate_company_report(self):
         account_id = self.get_random_account()
         self.client.post(url=f'/accounts/generate_company_report/{account_id}')
 
-    @task(3)
+    @task(5)
     def block_agent(self):
         _, agent_id = self.get_random_agent()
         self.client.post(url=f'/agents/block_agent/{agent_id}')
 
-    @task(3)
+    @task(5)
     def unblock_agent(self):
         _, agent_id = self.get_random_agent()
         self.client.post(url=f'/agents/unblock_agent/{agent_id}')

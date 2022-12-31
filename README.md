@@ -27,7 +27,15 @@ The goal of the project was to play with the Microservice architecture and impro
 - tests realized with pytest
   - fixtures
   - mocks
-  - load tests with Locust
+  - load tests with Locust, traffic model:
+    - 30.0% get_agent
+    - 20.0% generate_company_report
+    - 15.0% get_account
+    - 10.0% create_agent
+    - 10.0% get_agents
+    - 5.0% unblock_agent
+    - 5.0% block_agent
+    - 5.0% create_account
 - event handling implemented by RabbitMQ used in an async way using Topics
   - under `demo_environment/billing_service` you get consumer for accounts/agents Topics (user story 2.)
   - under `demo_environment/compliance_service` you get producer for blocking agents (user story 3.)
