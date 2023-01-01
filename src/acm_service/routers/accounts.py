@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+import redis
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
@@ -12,6 +13,7 @@ from acm_service.dependencies import get_account_dal, get_token_header, get_2fa_
 from acm_service.data_base.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
+from acm_service.utils.env import REDIS_URL, REDIS_PORT
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -21,6 +23,19 @@ router = APIRouter(
     tags=["accounts"],
     dependencies=[Depends(get_token_header)]
 )
+
+
+@router.get('/redis/{value}')
+async def read_redis(value: str):
+    r = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
+    result = r.get(value)
+    return {'value': result}
+
+
+@router.put('/redis', status_code=status.HTTP_202_ACCEPTED)
+async def put_redis(key: str, value: str):
+    r = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
+    r.set(key, value)
 
 
 @router.get('', response_model=Page[schemas.AccountWithoutAgents])
@@ -38,7 +53,7 @@ async def read_account(account_id: str, accounts: AccountDAL = Depends(get_accou
 
 
 @router.post('/generate_company_report/{account_id}', response_model=schemas.Account)
-async def read_account_with_agents(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
+async def generate_company_report(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
     db_account = await accounts.get_with_agents(account_id)
     if db_account is None:
         raise_not_found(f'Account {account_id} not found')

@@ -18,3 +18,6 @@ ENABLE_EVENTS = os.environ.get('ENABLE_EVENTS', 'False') == 'True'
 ASYNC_DB_URL = os.environ.get('ASYNC_DB_URL', 'sqlite+aiosqlite:///./sql_app.db')
 DEBUG_LOGGER_LEVEL = (os.environ.get('DEBUG_LOGGER_LEVEL', 'False') == 'True')
 DEBUG_REST = (os.environ.get('DEBUG_REST', 'False') == 'True')
+
+REDIS_URL = os.environ.get('REDIS_URL', '')
+REDIS_PORT = os.environ.get('REDIS_PORT', '')
