@@ -3,7 +3,6 @@ from uuid import uuid4
 from typing import List
 
 from aio_pika.abc import AbstractRobustConnection
-from sqlalchemy.orm import Session
 from acm_service.data_base.account_dal import AccountDAL
 from acm_service.data_base.agent_dal import AgentDAL
 from acm_service.data_base.models import Account, Agent
@@ -39,11 +38,9 @@ class RabbitProducerStub(EventProducer):
 
 
 class AccountDALStub(AccountDAL):
-    class SessionStub(Session):
-        pass
 
     def __init__(self):
-        super().__init__(self.SessionStub())
+        super().__init__()
         self._accounts_by_uuid = {}
         self._accounts_by_mail = {}
 
@@ -92,11 +89,9 @@ class AccountDALStub(AccountDAL):
 
 
 class AgentDALStub(AgentDAL):
-    class SessionStub(Session):
-        pass
 
     def __init__(self):
-        super().__init__(self.SessionStub())
+        super().__init__()
         self._agents_by_uuid = {}
         self._agents_by_mail = {}
 

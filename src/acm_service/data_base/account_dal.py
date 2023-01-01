@@ -13,22 +13,29 @@ from acm_service.data_base.database import async_session
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
-def decorate_database(coro):
+def db_session(coro):
     async def wrapper(*args, **kwargs):
         try:
-            return await coro(*args, **kwargs)
+            async with async_session() as session:
+                async with session.begin():
+                    args[0].set_session(session)
+                    return await coro(*args, **kwargs)
         except BaseException as exc:
             logger.exception("DataBase exception %s", exc)
             raise exc
+
     return wrapper
 
 
 class AccountDAL:
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session = None):
         self._session = session
 
-    @decorate_database
+    def set_session(self, session: Session):
+        self._session = session
+
+    @db_session
     async def create(self, **kwargs) -> Account:
         new_account = Account(id=str(uuid4()), **kwargs)
         self._session.add(new_account)
@@ -36,52 +43,50 @@ class AccountDAL:
 
         return new_account
 
-    @decorate_database
+    @db_session
     async def get(self, account_uuid: str) -> Account | None:
         query = await self._session.execute(select(Account).where(Account.id == account_uuid))
         return query.scalar()
 
-    @decorate_database
+    @db_session
     async def get_with_agents(self, account_uuid: str) -> Account | None:
         query = await self._session.execute(select(Account).where(Account.id == account_uuid).
                                             options(selectinload(Account.agents)))
         return query.scalar()
 
-    @decorate_database
+    @db_session
     async def get_account_by_email(self, email: str) -> Account | None:
         query = await self._session.execute(select(Account).where(Account.email == email))
         return query.scalar()
 
-    @decorate_database
+    @db_session
     async def get_all(self) -> List[Account]:
         query = await self._session.execute(select(Account).order_by(Account.name))
         return query.scalars().all()
 
-    @decorate_database
+    @db_session
     async def delete_all(self):
         await self._session.execute(delete(Account))
 
-    @decorate_database
+    @db_session
     async def delete(self, account_uuid: str):
         request = select(Account).where(Account.id == account_uuid).options(joinedload(Account.agents))
         account = await self._session.scalar(request)
         await self._session.delete(account)
         await self._session.commit()
 
-    @decorate_database
+    @db_session
     async def update(self, account_uuid: str, **kwargs):
-        query = update(Account).where(Account.id == account_uuid).values(**kwargs).\
+        query = update(Account).where(Account.id == account_uuid).values(**kwargs). \
             execution_options(synchronize_session="fetch")
         await self._session.execute(query)
         await self._session.flush()
 
-    @decorate_database
+    @db_session
     async def close(self):
         if self._session and self._session.is_active:
             await self._session.close()
 
 
-async def get_account_dal() -> AccountDAL:
-    async with async_session() as session:
-        async with session.begin():
-            yield AccountDAL(session)
+def get_account_dal() -> AccountDAL:
+    return AccountDAL()
