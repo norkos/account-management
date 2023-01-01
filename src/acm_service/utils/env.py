@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ENCODING = 'utf-8'
-API_TOKEN = os.environ.get('AUTH_TOKEN', '')
+AUTH_TOKEN = os.environ.get('AUTH_TOKEN', '')
 TWO_FA = os.environ.get('TWO_FA', '')
 
 CLOUDAMQP_URL = os.environ.get('CLOUDAMQP_URL', '')

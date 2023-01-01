@@ -8,7 +8,7 @@ from sqlalchemy import delete, update
 
 from acm_service.data_base.models import Account
 from acm_service.utils.logconf import DEFAULT_LOGGER
-
+from acm_service.data_base.database import async_session
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -79,3 +79,9 @@ class AccountDAL:
     async def close(self):
         if self._session and self._session.is_active:
             await self._session.close()
+
+
+async def get_account_dal() -> AccountDAL:
+    async with async_session() as session:
+        async with session.begin():
+            yield AccountDAL(session)

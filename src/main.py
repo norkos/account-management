@@ -12,7 +12,7 @@ from scout_apm.async_.starlette import ScoutMiddleware
 from acm_service.utils.env import PORT
 from acm_service.routers import accounts, agents
 from acm_service.dependencies import get_event_broker_connection
-from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, API_TOKEN
+from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
 from acm_service.events.connection import disconnect_event_broker
@@ -70,8 +70,8 @@ async def startup():
     logger.info(f'Application started with debugging: {DEBUG_LOGGER_LEVEL}, '
                 f'debugging rest: {DEBUG_REST}, events: {ENABLE_EVENTS}')
 
-    if len(API_TOKEN) == 0:
-        logger.error('Missing API_TOKEN in your env variables')
+    if len(AUTH_TOKEN) == 0:
+        logger.error('Missing AUTH_TOKEN in your env variables')
     if len(TWO_FA) == 0:
         logger.error('Missing TWO_FA in your env variables')
 

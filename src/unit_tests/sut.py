@@ -2,9 +2,11 @@ import asyncio
 
 from fastapi.testclient import TestClient
 
+from acm_service.data_base.account_dal import get_account_dal
+from acm_service.data_base.agent_dal import get_agent_dal
 from main import app
 
-from acm_service.dependencies import get_account_dal, get_agent_dal
+
 from acm_service.events.producer import get_event_producer
 
 from unit_tests.utils import AccountDALStub, RabbitProducerStub, AgentDALStub
