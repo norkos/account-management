@@ -127,6 +127,18 @@ class RestClient:
                   f'Response code={response_status_code}.')
             return None
 
+    async def delete_agent(self, account_uuid: str, agent_uuid: str) -> None:
+        async with aiohttp.ClientSession(headers=
+                                         {'x-token': self._token,
+                                          'accept': 'application/json',
+                                          }, ) as session:
+            result = await session.delete(f'{self._url}/accounts/{account_uuid}/agents/{agent_uuid}')
+
+            if result.status.real in HTTP_RESPONSE_ACCEPT:
+                print(f'Agent {agent_uuid} deleted')
+            else:
+                print(f'Agent {agent_uuid} NOT deleted')
+
     async def delete_account(self, account_uuid: str) -> None:
         async with aiohttp.ClientSession(headers=
                                          {'x-token': self._token,

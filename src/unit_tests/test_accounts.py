@@ -1,9 +1,13 @@
+import uuid
 from unittest.mock import ANY
+from uuid import uuid4
+
 import mock
 import pytest
 from requests import Response
 
 from acm_service.utils.env import AUTH_TOKEN, TWO_FA
+from data_base.schemas import RegionEnum
 
 from unit_tests.utils import RabbitProducerStub, generate_random_mail
 from unit_tests.sut import client, reset_database
@@ -14,12 +18,13 @@ def run_before_and_after_tests(tmpdir):
     reset_database()
 
 
-def create_account(name: str = 'dummy', email: str = None, region: str = 'nam', vip: bool = False) -> Response:
+def create_account(name: str = 'dummy', email: str = None,
+                   region: RegionEnum = RegionEnum.nam, vip: bool = False) -> Response:
     return client.post(
         '/accounts',
         headers={'X-Token': AUTH_TOKEN},
         json={'name': name, 'email': email if email is not None else generate_random_mail(),
-              'region': region, 'vip': str(vip)}
+              'region': region.value, 'vip': str(vip)}
     )
 
 
@@ -27,11 +32,11 @@ def create_account(name: str = 'dummy', email: str = None, region: str = 'nam', 
 def test_create_account(mocked_method):
     name = 'my_name'
     mail = generate_random_mail()
-    region = 'emea'
+    region = RegionEnum.emea
     vip = True
 
     response = create_account(name, mail, region, vip)
-    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=response.json()['id'], vip=vip)
+    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=uuid.UUID(response.json()['id']), vip=vip)
 
     assert response.status_code == 200
     assert response.json()['name'] == name
@@ -50,7 +55,7 @@ def test_create_account_duplicated_mail():
 
 
 def test_create_account_invalid_mail():
-    response = create_account('my_name2', 'my_mailmail.com')
+    response = create_account('my_name2', 'my_mailman.com')
     assert response.status_code == 422
 
 
@@ -68,10 +73,10 @@ def test_create_accounts_bad_token():
 def test_read_account():
     name = 'my_name'
     mail = generate_random_mail()
-    region = 'emea'
+    region = RegionEnum.emea
     vip = True
     create_response = create_account(name, mail, region, vip)
-    account_id = create_response.json()["id"]
+    account_id = create_response.json()['id']
 
     read_response = client.get(
         f'/accounts/{account_id}',
@@ -82,14 +87,14 @@ def test_read_account():
         'id': account_id,
         'name':  name,
         'email': mail,
-        'region': region,
+        'region': region.value,
         'vip': vip
     }
 
 
 @mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
 def test_delete_account(mocked_method):
-    region = 'emea'
+    region = RegionEnum.emea
     vip = False
     create_response = create_account(region=region, vip=vip)
 
@@ -99,7 +104,8 @@ def test_delete_account(mocked_method):
         headers={"X-Token": AUTH_TOKEN}
     )
     assert delete_response.status_code == 202
-    mocked_method.assert_called_with(ANY, region=region, account_uuid=create_response.json()["id"], vip=vip)
+    mocked_method.assert_called_with(ANY, region=region,
+                                     account_uuid=uuid.UUID(create_response.json()["id"]), vip=vip)
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
@@ -114,20 +120,21 @@ def test_read_account_bad_token():
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
-        headers={"X-Token": 'wrong one'}
+        headers={'X-Token': 'wrong one'}
     )
 
     assert read_response.status_code == 400
-    assert read_response.json() == {"detail": "Invalid X-Token header"}
+    assert read_response.json() == {'detail': 'Invalid X-Token header'}
 
 
 def test_read_account_not_found():
+    random_uuid = uuid4()
     response = client.get(
-        '/accounts/100',
+        f'/accounts/{random_uuid}',
         headers={"X-Token": AUTH_TOKEN}
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Account 100 not found"}
+    assert response.json() == {'detail': f'Account {random_uuid} not found'}
 
 
 def test_read_accounts():
@@ -163,7 +170,7 @@ def test_can_remove_all_accounts(mocked_method):
         headers={'X-Token': AUTH_TOKEN,
                  'TWO-FA': TWO_FA}
     )
-    mocked_method.assert_called_with(ANY, region='*', account_uuid='*', vip=True)
+    mocked_method.assert_called_with(ANY, region=None, account_uuid=None, vip=True)
 
     assert response.status_code == 202
 

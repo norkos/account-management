@@ -1,6 +1,6 @@
 import logging
 from typing import Any
-import aioredis
+from uuid import UUID
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
@@ -13,7 +13,6 @@ from acm_service.dependencies import get_token_header, get_2fa_token_header, get
 from acm_service.data_base.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
-from acm_service.utils.env import REDIS_URL, REDIS_PORT
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -25,26 +24,13 @@ router = APIRouter(
 )
 
 
-@router.get('/redis/{value}')
-async def read_redis(value: str):
-    r = aioredis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
-    result = await r.get(value)
-    return {'value': result}
-
-
-@router.put('/redis', status_code=status.HTTP_202_ACCEPTED)
-async def put_redis(key: str, value: str):
-    r = aioredis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
-    await r.set(key, value)
-
-
 @router.get('', response_model=Page[schemas.AccountWithoutAgents])
 async def read_accounts(accounts: AccountDAL = Depends(get_account_dal)):
     return paginate(await accounts.get_all())
 
 
 @router.get('/{account_id}', response_model=schemas.AccountWithoutAgents)
-async def read_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
+async def read_account(account_id: UUID, accounts: AccountDAL = Depends(get_account_dal)):
     db_account = await accounts.get(account_id)
     if db_account is None:
         raise_not_found(f'Account {account_id} not found')
@@ -53,7 +39,7 @@ async def read_account(account_id: str, accounts: AccountDAL = Depends(get_accou
 
 
 @router.post('/generate_company_report/{account_id}', response_model=schemas.Account)
-async def generate_company_report(account_id: str, accounts: AccountDAL = Depends(get_account_dal)):
+async def generate_company_report(account_id: UUID, accounts: AccountDAL = Depends(get_account_dal)):
     db_account = await accounts.get_with_agents(account_id)
     if db_account is None:
         raise_not_found(f'Account {account_id} not found')
@@ -62,7 +48,7 @@ async def generate_company_report(account_id: str, accounts: AccountDAL = Depend
 
 
 @router.delete('/{account_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_account_dal),
+async def delete_account(account_id: UUID, accounts: AccountDAL = Depends(get_account_dal),
                          rabbit_producer: EventProducer = Depends(get_event_producer)):
     account = await accounts.get_with_agents(account_id)
     if account is None:
@@ -71,7 +57,7 @@ async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_acc
 
     await rabbit_producer.delete_account(region=account.region, account_uuid=account_id, vip=account.vip)
     for agent in schemas.Account.from_orm(account).agents:
-        await rabbit_producer.delete_agent(region=account.region, agent_uuid=str(agent.id))
+        await rabbit_producer.delete_agent(region=account.region, agent_uuid=agent.id)
     logger.info(f'Account {account_id} was deleted')
 
 
@@ -79,8 +65,8 @@ async def delete_account(account_id: str, accounts: AccountDAL = Depends(get_acc
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header), accounts: AccountDAL = Depends(get_account_dal),
                 rabbit_producer: EventProducer = Depends(get_event_producer)):
     await accounts.delete_all()
-    await rabbit_producer.delete_account('*', '*', vip=True)
-    await rabbit_producer.delete_agent('*', '*')
+    await rabbit_producer.delete_account(None, None, vip=True)
+    await rabbit_producer.delete_agent(None, None)
     logger.info('All accounts were deleted')
 
 

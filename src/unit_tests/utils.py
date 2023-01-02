@@ -3,10 +3,12 @@ from uuid import uuid4
 from typing import List
 
 from aio_pika.abc import AbstractRobustConnection
+from pydantic import EmailStr
+
 from acm_service.data_base.account_dal import AccountDAL
 from acm_service.data_base.agent_dal import AgentDAL
-from acm_service.data_base.models import Account, Agent
 from acm_service.events.producer import EventProducer
+from acm_service.data_base.schemas import Account, Agent, RegionEnum
 
 
 def generate_random_mail() -> str:
@@ -45,13 +47,14 @@ class AccountDALStub(AccountDAL):
         self._accounts_by_mail = {}
 
     def create_random(self) -> Account:
-        new_account = Account(id=str(uuid4()), name='dummy_name', email=generate_random_mail(), region='emea')
+        new_account = Account(id=uuid4(), name='dummy_name', email=EmailStr(generate_random_mail()),
+                              region=RegionEnum.emea, vip=False)
         self._accounts_by_uuid[new_account.id] = new_account
         self._accounts_by_mail[new_account.email] = new_account
         return new_account
 
     async def create(self, **kwargs) -> Account:
-        new_account = Account(id=str(uuid4()), **kwargs)
+        new_account = Account(id=uuid4(), **kwargs)
         self._accounts_by_uuid[new_account.id] = new_account
         self._accounts_by_mail[new_account.email] = new_account
         return new_account
@@ -96,7 +99,7 @@ class AgentDALStub(AgentDAL):
         self._agents_by_mail = {}
 
     async def create(self, **kwargs) -> Agent:
-        new_agent = Agent(id=str(uuid4()), **kwargs)
+        new_agent = Agent(id=uuid4(), **kwargs)
         self._agents_by_uuid[new_agent.id] = new_agent
         self._agents_by_mail[new_agent.email] = new_agent
         return new_agent

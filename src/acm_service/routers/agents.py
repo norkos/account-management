@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+from uuid import UUID
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
@@ -24,7 +25,7 @@ router = APIRouter(
 
 
 @router.get('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
-async def read_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
+async def read_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal)):
     agent = await agents.get(agent_id)
     if agent is None:
         raise_not_found(f'Agent {agent_id} not found')
@@ -33,7 +34,7 @@ async def read_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/agents/block_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+async def block_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal),
                       accounts: AccountDAL = Depends(get_account_dal),
                       rabbit_producer: EventProducer = Depends(get_event_producer)):
     result = await AgentController(agents, accounts, rabbit_producer).block_agent(agent_id)
@@ -43,7 +44,7 @@ async def block_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
 
 
 @router.post('/agents/unblock_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def unblock_agent(agent_id: str, agents: AgentDAL = Depends(get_agent_dal),
+async def unblock_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal),
                         accounts: AccountDAL = Depends(get_account_dal),
                         rabbit_producer: EventProducer = Depends(get_event_producer)):
     result = await AgentController(agents, accounts, rabbit_producer).unblock_agent(agent_id)
@@ -63,7 +64,7 @@ async def find_agent(email: str,
 
 
 @router.get('/accounts/{account_id}/agents', response_model=Page[Agent])
-async def read_agents(account_id: str, agents: AgentDAL = Depends(get_agent_dal)):
+async def read_agents(account_id: UUID, agents: AgentDAL = Depends(get_agent_dal)):
     return paginate(await agents.get_agents_for_account(account_id))
 
 
@@ -73,14 +74,14 @@ async def read_all_agents(database: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
-async def create_agent(account_id: str, agent: AgentCreate,
+async def create_agent(account_id: UUID, agent: AgentCreate,
                        agents: AgentDAL = Depends(get_agent_dal),
-                       accounts: AgentDAL = Depends(get_account_dal),
+                       accounts: AccountDAL = Depends(get_account_dal),
                        rabbit_producer: EventProducer = Depends(get_event_producer)):
     if await agents.get_agent_by_email(agent.email):
         raise_bad_request(f'E-mail {agent.email} is already used')
 
-    result = await agents.create(name=agent.name, email=agent.email, account_id=account_id, blocked=False)
+    result = await agents.create(name=agent.name, email=agent.email, account_id=str(account_id), blocked=False)
     logger.info(f'Agent {result.id} was created')
 
     account = await accounts.get(account_id)
@@ -94,14 +95,14 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
                 agents: AgentDAL = Depends(get_agent_dal),
                 rabbit_producer: EventProducer = Depends(get_event_producer)):
     await agents.delete_all()
-    await rabbit_producer.delete_agent('*', '*')
+    await rabbit_producer.delete_agent(None, None)
     logger.info('All agents were deleted')
 
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def delete_agent(account_id: str, agent_id: str,
+async def delete_agent(account_id: UUID, agent_id: UUID,
                        agents: AgentDAL = Depends(get_agent_dal),
-                       accounts: AgentDAL = Depends(get_account_dal),
+                       accounts: AccountDAL = Depends(get_account_dal),
                        rabbit_producer: EventProducer = Depends(get_event_producer)):
     agent = await agents.get(agent_id)
     account = await accounts.get(account_id)

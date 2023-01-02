@@ -1,9 +1,12 @@
 import asyncio
 
+import pytest
+
+from data_base.schemas import RegionEnum
 from integration_tests.consumer import Consumer
 from integration_tests.producer import Producer
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
-from integration_tests.env import TOKEN, URL, RABBIT_MQ, TWO_FA
+from integration_tests.env import TOKEN, URL, RABBIT_MQ, TWO_FA, REDIS_CACHE_INVALIDATION_IN_SECONDS
 
 
 async def clear_db(api: RestClient) -> None:
@@ -139,6 +142,48 @@ class ProducerEventHandler:
         pass
 
 
+async def _account_cache(api: RestClient):
+    #   create account
+    account_name, email = generate_account_details()
+    account_uuid = await api.create_account(account_name, email)
+
+    #   cache it
+    await api.get_account(account_uuid)
+
+    #   delete account
+    await api.delete_account(account_uuid)
+
+    #   read before cache is refreshed
+    account = await api.get_account(account_uuid)
+    assert account['id'] == account_uuid
+
+
+async def _agent_cache(api: RestClient):
+    #   create account
+    account_name, email = generate_account_details()
+    account_uuid = await api.create_account(account_name, email)
+
+    #   create agent
+    agent_name, agent_email = generate_agent_details()
+    agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
+
+    #   cache it
+    await api.get_agent(account_uuid, agent_uuid)
+
+    #   delete agent
+    await api.delete_agent(account_uuid, agent_uuid)
+
+    #   read before cache is refreshed
+    agent = await api.get_agent(account_uuid, agent_uuid)
+    assert agent['id'] == agent_uuid
+
+    #   wait for the cache to be cleared
+    await asyncio.sleep(REDIS_CACHE_INVALIDATION_IN_SECONDS)
+
+    response = await api.get_agent(account_uuid, agent_uuid)
+    assert 'not found' in response['detail']
+
+
 async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: str, vip: bool) -> None:
     async with ConsumerEventHandler(region) as consumer:
         account_name, email = generate_account_details()
@@ -171,6 +216,9 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: st
         if vip:
             await consumer.assert_deleted_vip_accounts([account_uuid])
 
+        #   wait for the cache to be cleared
+        await asyncio.sleep(REDIS_CACHE_INVALIDATION_IN_SECONDS)
+
         #   verify that account was deleted
         account = await api.get_account(account_uuid)
         assert 'not found' in account['detail']
@@ -185,98 +233,87 @@ async def flow_of_the_account(api: RestClient, amount_of_agents: int, region: st
 async def _test_block_and_unblock_agent_via_event(api: RestClient, region: str) -> None:
     async with ConsumerEventHandler(region) as consumer:
         async with ProducerEventHandler() as producer:
-
-            account_name, account_email = generate_account_details()
-            account_uuid = await api.create_account(account_name, account_email, region)
-
-            agent_name, agent_email = generate_agent_details()
-            agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
-
-            # when
-            await producer.block_agent(agent_uuid)
-            await asyncio.sleep(0.5)
-
-            # then
-            agent = await api.get_agent(account_uuid, agent_uuid)
-            assert agent['blocked']
-            await consumer.assert_blocked_agents([agent_uuid])
-
-            # when
-            await producer.unblock_agent(agent_uuid)
-            await asyncio.sleep(0.5)
-
-            # then
-            agent = await api.get_agent(account_uuid, agent_uuid)
-            assert not agent['blocked']
-            await consumer.assert_blocked_agents([])
+            return await _test_block_and_unblock_agent(api, region, consumer, producer)
 
 
 async def _test_block_and_unblock_agent_via_rest(api: RestClient, region: str) -> None:
     async with ConsumerEventHandler(region) as consumer:
-        account_name, account_email = generate_account_details()
-        account_uuid = await api.create_account(account_name, account_email, region)
-
-        agent_name, agent_email = generate_agent_details()
-        agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
-
-        # when
-        await api.block_agent(agent_uuid)
-
-        # then
-        agent = await api.get_agent(account_uuid, agent_uuid)
-        assert agent['blocked']
-        await consumer.assert_blocked_agents([agent_uuid])
-
-        # when
-        await api.unblock_agent(agent_uuid)
-
-        # then
-        agent = await api.get_agent(account_uuid, agent_uuid)
-        assert not agent['blocked']
-        await consumer.assert_blocked_agents([])
+        return await _test_block_and_unblock_agent(api, region, consumer, api)
 
 
-def test_block_and_unblock_agent_via_rest():
+async def _test_block_and_unblock_agent(api: RestClient, region: str,
+                                        consumer: ConsumerWrapper, someone_to_block) -> None:
+    account_name, account_email = generate_account_details()
+    account_uuid = await api.create_account(account_name, account_email, region)
+
+    agent_name, agent_email = generate_agent_details()
+    agent_uuid = await api.create_agent(account_uuid, agent_name, agent_email)
+
+    # when
+    await someone_to_block.block_agent(agent_uuid)
+
+    #   wait for the cache to be cleared
+    await asyncio.sleep(REDIS_CACHE_INVALIDATION_IN_SECONDS)
+
+    # then
+    agent = await api.get_agent(account_uuid, agent_uuid)
+    assert agent['blocked']
+    await consumer.assert_blocked_agents([agent_uuid])
+
+    # when
+    await someone_to_block.unblock_agent(agent_uuid)
+
+    #   wait for the cache to be cleared
+    await asyncio.sleep(REDIS_CACHE_INVALIDATION_IN_SECONDS)
+
+    # then
+    agent = await api.get_agent(account_uuid, agent_uuid)
+    assert not agent['blocked']
+    await consumer.assert_blocked_agents([])
+
+
+@pytest.fixture
+def rest() -> RestClient:
+    return RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
+
+
+@pytest.fixture(autouse=True)
+def fixture_func(tmpdir):
+    yield
+    asyncio.run(clear_db(RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)))
+
+
+def test_block_and_unblock_agent_via_rest(rest):
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
-    region = 'apac'
-
-    try:
-        asyncio.run(_test_block_and_unblock_agent_via_rest(rest, region))
-    finally:
-        asyncio.run(clear_db(rest))
+    region = RegionEnum.apac
+    asyncio.run(_test_block_and_unblock_agent_via_rest(rest, region.value))
 
 
-def test_block_and_unblock_agent_via_events():
+def test_block_and_unblock_agent_via_events(rest):
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
-    region = 'nam'
-
-    try:
-        asyncio.run(_test_block_and_unblock_agent_via_event(rest, region))
-    finally:
-        asyncio.run(clear_db(rest))
+    region = RegionEnum.nam
+    asyncio.run(_test_block_and_unblock_agent_via_event(rest, region.value))
 
 
-def test_create_account_with_agents():
+def test_create_account_with_agents(rest):
     # given
-    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
-    how_many_agents = 3
-    region = 'emea'
+    how_many_agents = 5
+    region = RegionEnum.emea
 
-    try:
-        asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=True))
-        asyncio.run(flow_of_the_account(rest, how_many_agents, region, vip=False))
-    finally:
-        asyncio.run(clear_db(rest))
+    asyncio.run(flow_of_the_account(rest, how_many_agents, region.value, vip=True))
+    asyncio.run(flow_of_the_account(rest, how_many_agents, region.value, vip=False))
 
 
-def test_create_and_remove_accounts():
+def test_create_and_remove_accounts(rest):
     # given
     how_many_accounts = 5
-    rest = RestClient(api_token=TOKEN, api_url=URL, two_fa=TWO_FA)
+    asyncio.run(create_accounts(rest, how_many_accounts))
+    asyncio.run(remove_all_accounts(rest))
 
-    try:
-        asyncio.run(create_accounts(rest, how_many_accounts))
-    finally:
-        asyncio.run(remove_all_accounts(rest))
+
+def test_account_cache(rest):
+    asyncio.run(_account_cache(rest))
+
+
+def test_agent_cache(rest):
+    asyncio.run(_agent_cache(rest))

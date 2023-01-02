@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.data_base.account_dal import AccountDAL
@@ -15,7 +16,7 @@ class AgentController:
         self._accounts = accounts
         self._producer = event_producer
 
-    async def block_agent(self, agent_uuid: str) -> bool:
+    async def block_agent(self, agent_uuid: UUID) -> bool:
         logger.info(f'Getting agent to be blocked {agent_uuid}')
         agent = await self._agents.get(agent_uuid)
         if agent is None:
@@ -26,7 +27,7 @@ class AgentController:
         await self._producer.block_agent(region, agent_uuid)
         return True
 
-    async def unblock_agent(self, agent_uuid: str) -> bool:
+    async def unblock_agent(self, agent_uuid: UUID) -> bool:
         logger.info(f'Getting agent to be unblocked {agent_uuid}')
         agent = await self._agents.get(agent_uuid)
         if agent is None:

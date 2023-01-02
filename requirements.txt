@@ -24,4 +24,5 @@ sqlakeyset==1.0.1659142803
 locust==2.14.0
 aioredis==2.0.1
 hiredis==2.1.0
+timedelta==2020.12.3
 pylint

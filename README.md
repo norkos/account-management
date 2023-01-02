@@ -45,14 +45,17 @@ The goal of the project was to play with the Microservice architecture and impro
    - Scout
    - Liberato
 
-### TODO list
+### WIP LIST
 - find out the bottleneck causing drop in Locust reports
   - ![img.png](doc/locust.jpg) 
+  - issue is related to too many connections to DB. Connection pooling is not helping. Cache needed
+  - Working on Redis
+
+### TODO list
 - extend load tests to inject events
 - play more with Heroku
   - check what resilience can be supported by Heroku
   - check if scaling can be supported by Heroku
-  - Redis ?
 - deploy this to Amazon ECS
 - when using FastAPI pagination it would be great to make also pagination for DB requests. Open source project is not supporting this out of the box.
 

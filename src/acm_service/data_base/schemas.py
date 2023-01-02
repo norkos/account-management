@@ -14,7 +14,7 @@ class AgentCreate(AgentBase):
 
 class Agent(AgentBase):
     id: UUID4
-    account_id: str
+    account_id: UUID4
     blocked: bool
 
     class Config:

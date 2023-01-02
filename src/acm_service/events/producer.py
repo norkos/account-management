@@ -1,11 +1,13 @@
 import asyncio
 import logging
+from uuid import uuid4, UUID
 
 from aio_pika import ExchangeType, Message, DeliveryMode
 from aio_pika.abc import AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.env import ENCODING, CLOUDAMQP_RETRIES, CLOUDAMQP_TIMEOUT
+from acm_service.data_base.schemas import RegionEnum
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -45,50 +47,54 @@ class EventProducer:
     def attach_to_connection(self, event_broker: AbstractRobustConnection | None):
         self._connection = event_broker
 
-    async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
+    async def _send_customer_event(self, entity_uuid: UUID | None, routing_key: str) -> None:
         exchange_name = 'topic_customers'
         channel = await self._connection.channel()
+        message_content = str(entity_uuid) if entity_uuid else '*'
+
         exchange = await channel.declare_exchange(name=exchange_name, type=ExchangeType.TOPIC)
-        message = Message(entity_uuid.encode(ENCODING), delivery_mode=DeliveryMode.PERSISTENT)
+        message = Message(message_content.encode(ENCODING), delivery_mode=DeliveryMode.PERSISTENT)
         await exchange.publish(message, routing_key=routing_key)
-        logger.info(f'Sending the event with body={entity_uuid} to routing key={routing_key}')
+        logger.info(f'Sending the event with body={message_content} to routing key={routing_key}')
 
     @decorate_event
-    async def block_agent(self, region: str, agent_uuid: str) -> None:
-        routing_key = f'block.agent.{region}'
+    async def block_agent(self, region: RegionEnum, agent_uuid: UUID) -> None:
+        routing_key = f'block.agent.{region.value}'
         return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
-    async def unblock_agent(self, region: str, agent_uuid: str) -> None:
-        routing_key = f'unblock.agent.{region}'
+    async def unblock_agent(self, region: RegionEnum, agent_uuid: UUID) -> None:
+        routing_key = f'unblock.agent.{region.value}'
         return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
-    async def create_agent(self, region: str, agent_uuid: str) -> None:
-        routing_key = f'create.agent.{region}'
+    async def create_agent(self, region: RegionEnum, agent_uuid: UUID) -> None:
+        routing_key = f'create.agent.{region.value}'
         return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
-    async def delete_agent(self, region: str, agent_uuid: str) -> None:
-        routing_key = f'delete.agent.{region}'
+    async def delete_agent(self, region: RegionEnum | None,
+                           agent_uuid: UUID | None) -> None:
+        routing_key = f'delete.agent.{region.value if region else "*"}'
         return await self._send_customer_event(agent_uuid, routing_key)
 
     @decorate_event
-    async def create_account(self, region: str, account_uuid: str, vip: bool) -> None:
-        routing_key = f'create.account.{region}'
+    async def create_account(self, region: RegionEnum, account_uuid: UUID, vip: bool) -> None:
+        routing_key = f'create.account.{region.value}'
         routing_key += '.vip' if vip else '.standard'
         return await self._send_customer_event(account_uuid, routing_key)
 
     @decorate_event
-    async def delete_account(self, region: str, account_uuid: str, vip: bool) -> None:
-        routing_key = f'delete.account.{region}'
+    async def delete_account(self, region: RegionEnum | None,
+                             account_uuid: UUID | None, vip: bool) -> None:
+        routing_key = f'delete.account.{region.value if region else "*"}'
         routing_key += '.vip' if vip else '.standard'
         return await self._send_customer_event(account_uuid, routing_key)
 
 
 class LocalEventProducer(EventProducer):
 
-    async def _send_customer_event(self, entity_uuid: str, routing_key: str) -> None:
+    async def _send_customer_event(self, entity_uuid: UUID, routing_key: str) -> None:
         logger.info(f'Stubbed. Sending the event with body={entity_uuid} to routing key={routing_key}')
 
 

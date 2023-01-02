@@ -1,5 +1,6 @@
 import logging
 from typing import Callable
+from uuid import UUID
 
 from aio_pika import ExchangeType
 from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
@@ -14,8 +15,8 @@ from acm_service.data_base.agent_dal import AgentDAL
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
-def decode(message: AbstractIncomingMessage) -> str:
-    return message.body.decode(ENCODING)
+def decode(message: AbstractIncomingMessage) -> UUID:
+    return UUID(message.body.decode(ENCODING))
 
 
 class EventConsumer:
