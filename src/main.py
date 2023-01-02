@@ -9,16 +9,17 @@ from fastapi_pagination import add_pagination
 from scout_apm.api import Config
 from scout_apm.async_.starlette import ScoutMiddleware
 
-from acm_service.utils.env import PORT
+from acm_service.utils.env import PORT, REDIS_URL
 from acm_service.routers import accounts, agents
-from acm_service.dependencies import get_event_broker_connection
+from acm_service.dependencies import get_event_broker_connection, get_cache_connection, get_cached_agent_dal, \
+    get_cached_account_dal, get_agent_dal, get_account_dal
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
 from acm_service.events.connection import disconnect_event_broker
 from acm_service.events.producer import get_event_producer, get_local_event_producer
 from acm_service.events.consumer import get_rabbit_consumer
-
+from acm_service.cache.cached_dal import Cache
 
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
@@ -65,6 +66,19 @@ async def prepare_event_producer():
     logger.info('Event producer ready')
 
 
+async def prepare_cache():
+    logger.info('Preparing cache')
+    cache_connection = await get_cache_connection()
+    if cache_connection is None:
+        logger.error('Cannot connect to cache service. Running without it.')
+        return
+
+    Cache.get_instance().connect_to_cache_service(cache_connection)
+    app.dependency_overrides[get_agent_dal] = get_cached_agent_dal
+    app.dependency_overrides[get_account_dal] = get_cached_account_dal
+    logger.info('Cache is ready')
+
+
 @app.on_event("startup")
 async def startup():
     logger.info(f'Application started with debugging: {DEBUG_LOGGER_LEVEL}, '
@@ -81,6 +95,9 @@ async def startup():
     else:
         app.dependency_overrides[get_event_producer] = get_local_event_producer
         logger.info('Dispatching events was temporary disabled')
+
+    if len(REDIS_URL) != 0:
+        await prepare_cache()
 
 
 @app.on_event("shutdown")

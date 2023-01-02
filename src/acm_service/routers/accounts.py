@@ -1,6 +1,6 @@
 import logging
 from typing import Any
-import redis
+import aioredis
 
 from fastapi import Depends
 from fastapi import APIRouter, status, Response
@@ -9,8 +9,8 @@ from fastapi_pagination import paginate
 from acm_service.data_base import schemas
 from acm_service.events.producer import EventProducer, get_event_producer
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
-from acm_service.dependencies import get_token_header, get_2fa_token_header
-from acm_service.data_base.account_dal import AccountDAL, get_account_dal
+from acm_service.dependencies import get_token_header, get_2fa_token_header, get_account_dal
+from acm_service.data_base.account_dal import AccountDAL
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
 from acm_service.utils.env import REDIS_URL, REDIS_PORT
@@ -27,15 +27,15 @@ router = APIRouter(
 
 @router.get('/redis/{value}')
 async def read_redis(value: str):
-    r = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
-    result = r.get(value)
+    r = aioredis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
+    result = await r.get(value)
     return {'value': result}
 
 
 @router.put('/redis', status_code=status.HTTP_202_ACCEPTED)
 async def put_redis(key: str, value: str):
-    r = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
-    r.set(key, value)
+    r = aioredis.Redis(host=REDIS_URL, port=REDIS_PORT, db=0, decode_responses=True)
+    await r.set(key, value)
 
 
 @router.get('', response_model=Page[schemas.AccountWithoutAgents])

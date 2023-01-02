@@ -1,16 +1,25 @@
 import asyncio
 
 from aio_pika.abc import AbstractRobustConnection
+from aioredis import Redis
 from fastapi import Header
 
 
 from acm_service.utils.env import AUTH_TOKEN, TWO_FA
 from acm_service.utils.http_exceptions import raise_bad_request
-from acm_service.events.connection import connect_to_event_broker
+from acm_service.events.connection import connect_to_rabbit_mq
+from acm_service.cache.connection import connect_to_redis
+from acm_service.cache.cached_dal import AgentCachedDAL, AccountCachedDAL
+from acm_service.data_base.account_dal import AccountDAL
+from acm_service.data_base.agent_dal import AgentDAL
+
+
+async def get_cache_connection() -> Redis | None:
+    return await connect_to_redis()
 
 
 async def get_event_broker_connection() -> AbstractRobustConnection | None:
-    return await connect_to_event_broker(asyncio.get_event_loop())
+    return await connect_to_rabbit_mq(asyncio.get_event_loop())
 
 
 def get_token_header(x_token: str = Header()) -> None:
@@ -21,3 +30,19 @@ def get_token_header(x_token: str = Header()) -> None:
 def get_2fa_token_header(two_fa: str = Header()) -> None:
     if two_fa != TWO_FA:
         raise_bad_request("Invalid 2FA header")
+
+
+def get_cached_agent_dal() -> AgentDAL:
+    return AgentCachedDAL()
+
+
+def get_cached_account_dal() -> AccountDAL:
+    return AccountCachedDAL()
+
+
+def get_account_dal() -> AccountDAL:
+    return AccountDAL()
+
+
+def get_agent_dal() -> AgentDAL:
+    return AgentDAL()

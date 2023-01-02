@@ -21,3 +21,5 @@ DEBUG_REST = (os.environ.get('DEBUG_REST', 'False') == 'True')
 
 REDIS_URL = os.environ.get('REDIS_URL', '')
 REDIS_PORT = os.environ.get('REDIS_PORT', '')
+REDIS_RETRIES = int(os.environ.get('CLOUDAMQP_RETRIES', 1))
+REDIS_TIMEOUT = int(os.environ.get('CLOUDAMQP_TIMEOUT', 0))

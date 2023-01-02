@@ -10,8 +10,8 @@ from acm_service.utils.env import CLOUDAMQP_URL, CLOUDAMQP_RETRIES, CLOUDAMQP_TI
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
-async def connect_to_event_broker(loop, url: str = CLOUDAMQP_URL, connection_timeout: int = CLOUDAMQP_TIMEOUT,
-                                  retries: int = CLOUDAMQP_RETRIES) -> AbstractRobustConnection | None:
+async def connect_to_rabbit_mq(loop, url: str = CLOUDAMQP_URL, connection_timeout: int = CLOUDAMQP_TIMEOUT,
+                               retries: int = CLOUDAMQP_RETRIES) -> AbstractRobustConnection | None:
     for x in range(retries):
         try:
             connection = await connect_robust(CLOUDAMQP_URL, loop=loop)

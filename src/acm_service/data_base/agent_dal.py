@@ -85,5 +85,3 @@ class AgentDAL:
                 await session.flush()
 
 
-def get_agent_dal() -> AgentDAL:
-    return AgentDAL()

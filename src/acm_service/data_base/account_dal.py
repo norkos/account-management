@@ -86,7 +86,3 @@ class AccountDAL:
     async def close(self):
         if self._session and self._session.is_active:
             await self._session.close()
-
-
-def get_account_dal() -> AccountDAL:
-    return AccountDAL()

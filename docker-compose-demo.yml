@@ -19,15 +19,28 @@ services:
       TWO_FA: local_2fa
       CLOUDAMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
       ASYNC_DB_URL : 'postgresql+asyncpg://postgres_user:postgres_pass@db:5432/postgres'
+      REDIS_URL: 'cache'
+      REDIS_PORT: '6379'
       ENABLE_EVENTS : 'True'
       DEBUG_LOGGER_LEVEL : 'False'
       DEBUG_REST : 'False'
       CLOUDAMQP_RETRIES : '6'
       CLOUDAMQP_TIMEOUT : '10'
+      REDIS_RETRIES: '5'
+      REDIS_TIMEOUT: '2'
     ports:
       - '8080:80' #localhost:Dockerfile
     volumes:
       - .:/app
+    networks:
+      - network
+
+  cache:
+    image: 'redis:7.0-alpine'
+    ports:
+      - '6379:6379'
+    volumes:
+      - cache:/data
     networks:
       - network
 
@@ -114,3 +127,4 @@ networks:
 
 volumes:
   db:
+  cache:

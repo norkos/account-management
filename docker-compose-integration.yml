@@ -26,6 +26,8 @@ services:
       DEBUG_REST : 'True'
       CLOUDAMQP_RETRIES: '6'
       CLOUDAMQP_TIMEOUT: '10'
+      REDIS_RETRIES: '5'
+      REDIS_TIMEOUT: '2'
     ports:
       - '8080:80' #localhost:Dockerfile
     volumes:
