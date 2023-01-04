@@ -8,10 +8,10 @@ from main import app
 
 from acm_service.events.producer import get_event_producer
 
-from unit_tests.utils import AccountDALStub, RabbitProducerStub, AgentDALStub
+from unit_tests.utils import AccountRepositoryStub, RabbitProducerStub, AgentRepositoryStub
 
-account_dal = AccountDALStub()
-agent_dal = AgentDALStub()
+account_dal = AccountRepositoryStub()
+agent_dal = AgentRepositoryStub()
 
 
 def override_agent_dal():

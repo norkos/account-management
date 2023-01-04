@@ -2,16 +2,15 @@ import logging
 from uuid import UUID
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.data_base.account_dal import AccountDAL
-from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.repositories import AccountRepository, AgentRepository
 from acm_service.events.producer import EventProducer
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
 
-class AgentController:
+class AgentService:
 
-    def __init__(self, agents: AgentDAL, accounts: AccountDAL, event_producer: EventProducer):
+    def __init__(self, agents: AgentRepository, accounts: AccountRepository, event_producer: EventProducer):
         self._agents = agents
         self._accounts = accounts
         self._producer = event_producer

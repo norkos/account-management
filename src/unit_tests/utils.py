@@ -5,8 +5,7 @@ from typing import List
 from aio_pika.abc import AbstractRobustConnection
 from pydantic import EmailStr
 
-from acm_service.data_base.account_dal import AccountDAL
-from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.repositories import AccountRepository, AgentRepository
 from acm_service.events.producer import EventProducer
 from acm_service.data_base.schemas import Account, Agent, RegionEnum
 
@@ -39,7 +38,7 @@ class RabbitProducerStub(EventProducer):
         pass
 
 
-class AccountDALStub(AccountDAL):
+class AccountRepositoryStub(AccountRepository):
 
     def __init__(self):
         super().__init__()
@@ -91,7 +90,7 @@ class AccountDALStub(AccountDAL):
         self._accounts_by_mail = {}
 
 
-class AgentDALStub(AgentDAL):
+class AgentRepositoryStub(AgentRepository):
 
     def __init__(self):
         super().__init__()

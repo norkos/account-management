@@ -9,12 +9,11 @@ from fastapi_pagination import paginate
 from acm_service.data_base.schemas import Agent, AgentCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_bad_request
 from acm_service.dependencies import get_token_header, get_2fa_token_header, get_agent_dal, get_account_dal
-from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.repositories import AgentRepository, AccountRepository
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.events.producer import EventProducer, get_event_producer
 from acm_service.utils.pagination import Page
-from acm_service.controllers.agent_controller import AgentController
-from acm_service.data_base.account_dal import AccountDAL
+from acm_service.services.agent_service import AgentService
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -25,7 +24,7 @@ router = APIRouter(
 
 
 @router.get('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
-async def read_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal)):
+async def read_agent(agent_id: UUID, agents: AgentRepository = Depends(get_agent_dal)):
     agent = await agents.get(agent_id)
     if agent is None:
         raise_not_found(f'Agent {agent_id} not found')
@@ -34,20 +33,20 @@ async def read_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal)):
 
 
 @router.post('/agents/block_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def block_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal),
-                      accounts: AccountDAL = Depends(get_account_dal),
+async def block_agent(agent_id: UUID, agents: AgentRepository = Depends(get_agent_dal),
+                      accounts: AccountRepository = Depends(get_account_dal),
                       rabbit_producer: EventProducer = Depends(get_event_producer)):
-    result = await AgentController(agents, accounts, rabbit_producer).block_agent(agent_id)
+    result = await AgentService(agents, accounts, rabbit_producer).block_agent(agent_id)
 
     if not result:
         raise_not_found(f'Agent {agent_id} not found')
 
 
 @router.post('/agents/unblock_agent/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
-async def unblock_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal),
-                        accounts: AccountDAL = Depends(get_account_dal),
+async def unblock_agent(agent_id: UUID, agents: AgentRepository = Depends(get_agent_dal),
+                        accounts: AccountRepository = Depends(get_account_dal),
                         rabbit_producer: EventProducer = Depends(get_event_producer)):
-    result = await AgentController(agents, accounts, rabbit_producer).unblock_agent(agent_id)
+    result = await AgentService(agents, accounts, rabbit_producer).unblock_agent(agent_id)
 
     if not result:
         raise_not_found(f'Agent {agent_id} not found')
@@ -55,7 +54,7 @@ async def unblock_agent(agent_id: UUID, agents: AgentDAL = Depends(get_agent_dal
 
 @router.post('/agents/find_agent/{email}', response_model=Agent)
 async def find_agent(email: str,
-                     agents: AgentDAL = Depends(get_agent_dal)):
+                     agents: AgentRepository = Depends(get_agent_dal)):
     agent = await agents.get_agent_by_email(email)
     if agent is None:
         raise_not_found(f'Agent {email} not found')
@@ -64,19 +63,19 @@ async def find_agent(email: str,
 
 
 @router.get('/accounts/{account_id}/agents', response_model=Page[Agent])
-async def read_agents(account_id: UUID, agents: AgentDAL = Depends(get_agent_dal)):
+async def read_agents(account_id: UUID, agents: AgentRepository = Depends(get_agent_dal)):
     return paginate(await agents.get_agents_for_account(account_id))
 
 
 @router.get('/agents', response_model=Page[Agent])
-async def read_all_agents(database: AgentDAL = Depends(get_agent_dal)):
-    return paginate(await database.get_agents())
+async def read_all_agents(database: AgentRepository = Depends(get_agent_dal)):
+    return paginate(await database.get_all())
 
 
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
 async def create_agent(account_id: UUID, agent: AgentCreate,
-                       agents: AgentDAL = Depends(get_agent_dal),
-                       accounts: AccountDAL = Depends(get_account_dal),
+                       agents: AgentRepository = Depends(get_agent_dal),
+                       accounts: AccountRepository = Depends(get_account_dal),
                        rabbit_producer: EventProducer = Depends(get_event_producer)):
     if await agents.get_agent_by_email(agent.email):
         raise_bad_request(f'E-mail {agent.email} is already used')
@@ -92,7 +91,7 @@ async def create_agent(account_id: UUID, agent: AgentCreate,
 
 @router.post('/agents/clear', status_code=status.HTTP_202_ACCEPTED)
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
-                agents: AgentDAL = Depends(get_agent_dal),
+                agents: AgentRepository = Depends(get_agent_dal),
                 rabbit_producer: EventProducer = Depends(get_event_producer)):
     await agents.delete_all()
     await rabbit_producer.delete_agent(None, None)
@@ -101,8 +100,8 @@ async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
 
 @router.delete('/accounts/{account_id}/agents/{agent_id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_agent(account_id: UUID, agent_id: UUID,
-                       agents: AgentDAL = Depends(get_agent_dal),
-                       accounts: AccountDAL = Depends(get_account_dal),
+                       agents: AgentRepository = Depends(get_agent_dal),
+                       accounts: AccountRepository = Depends(get_account_dal),
                        rabbit_producer: EventProducer = Depends(get_event_producer)):
     agent = await agents.get(agent_id)
     account = await accounts.get(account_id)

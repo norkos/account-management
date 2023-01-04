@@ -5,8 +5,7 @@ from uuid import UUID
 
 from aioredis import Redis
 
-from acm_service.data_base.account_dal import AccountDAL
-from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.repositories import AccountRepository, AgentRepository
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.data_base.schemas import Agent, Account, AccountWithoutAgents
 from acm_service.utils.env import REDIS_CACHE_INVALIDATION_IN_SECONDS
@@ -38,7 +37,7 @@ class Cache:
         return await self._redis.get(f'{namespace}:{key}')
 
 
-class AccountCachedDAL(AccountDAL):
+class AccountCachedRepository(AccountRepository):
 
     def __init__(self, cache: Cache = Cache.get_instance()):
         super().__init__()
@@ -69,7 +68,7 @@ class AccountCachedDAL(AccountDAL):
         return result
 
 
-class AgentCachedDAL(AgentDAL):
+class AgentCachedRepository(AgentRepository):
 
     def __init__(self, cache: Cache = Cache.get_instance()):
         super().__init__()

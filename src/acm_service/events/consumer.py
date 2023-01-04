@@ -6,11 +6,10 @@ from aio_pika import ExchangeType
 from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.controllers.agent_controller import AgentController
+from acm_service.services.agent_service import AgentService
 from acm_service.events.producer import get_event_producer
 from acm_service.utils.env import ENCODING
-from acm_service.data_base.account_dal import AccountDAL
-from acm_service.data_base.agent_dal import AgentDAL
+from acm_service.data_base.repositories import AccountRepository, AgentRepository
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -40,7 +39,7 @@ class EventConsumer:
         async with message.process():
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
-            controller = AgentController(agents=AgentDAL(), accounts=AccountDAL(), event_producer=get_event_producer())
+            controller = AgentService(agents=AgentRepository(), accounts=AccountRepository(), event_producer=get_event_producer())
             result = await controller.block_agent(uuid)
             logger.info(f'Receiving event to block agent: {uuid} with result: {result}')
 
@@ -49,7 +48,7 @@ class EventConsumer:
         async with message.process():
             uuid = decode(message)
             logger.info(f'Receiving event to block agent: {uuid}')
-            controller = AgentController(agents=AgentDAL(), accounts=AccountDAL(), event_producer=get_event_producer())
+            controller = AgentService(agents=AgentRepository(), accounts=AccountRepository(), event_producer=get_event_producer())
             result = await controller.unblock_agent(uuid)
             logger.info(f'Receiving event to unblock agent: {uuid} with result: {result}')
 
