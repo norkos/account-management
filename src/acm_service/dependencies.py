@@ -4,7 +4,6 @@ from aio_pika.abc import AbstractRobustConnection
 from aioredis import Redis
 from fastapi import Header
 
-
 from acm_service.utils.env import AUTH_TOKEN, TWO_FA
 from acm_service.utils.http_exceptions import raise_bad_request
 from acm_service.events.connection import connect_to_rabbit_mq
@@ -45,3 +44,4 @@ def get_account_dal() -> AccountRepository:
 
 def get_agent_dal() -> AgentRepository:
     return AgentRepository()
+

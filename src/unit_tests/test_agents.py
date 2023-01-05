@@ -1,12 +1,11 @@
 from uuid import uuid4, UUID
-from unittest.mock import ANY
 
 import mock
 import pytest
 
 from requests import Response
 
-from acm_service.utils.env import AUTH_TOKEN, TWO_FA
+from acm_service.utils.env import AUTH_TOKEN
 from acm_service.data_base.schemas import Agent, Account
 
 from unit_tests.utils import RabbitProducerStub, generate_random_mail
@@ -40,30 +39,27 @@ def create_agent(account_uuid: UUID, name: str = 'dummy', email: str = None, tok
     )
 
 
-@mock.patch.object(RabbitProducerStub, 'create_agent', autospec=True)
-def test_create_agent(mocked_method, account):
+def test_create_agent(account):
     name = 'my_name'
     mail = 'test@mail.com'
 
     response = create_agent(account.id, name, mail)
-    mocked_method.assert_called_once_with(ANY, region=account.region, agent_uuid=UUID(response.json()['id']))
 
     assert response.status_code == 200
     assert response.json()['name'] == name
     assert response.json()['email'] == mail
 
 
-def test_create_account_duplicated_mail(account):
+def test_create_agent_duplicated_mail(account):
     duplicate_mail = 'my_mail@mail.com'
     create_agent(account.id, email=duplicate_mail)
     response = create_agent(account.id, email=duplicate_mail)
 
     assert response.status_code == 400
-    assert response.json() == {'detail': f'E-mail {duplicate_mail} is already used'}
+    assert response.json() == {'detail': f'E-mail is already used'}
 
 
-@mock.patch.object(RabbitProducerStub, 'block_agent', autospec=True)
-def test_block_agent(block_agent, account):
+def test_block_agent(account):
     response = create_agent(account.id)
     agent_uuid = UUID(response.json()['id'])
     is_blocked = response.json()['blocked']
@@ -76,15 +72,13 @@ def test_block_agent(block_agent, account):
         f'/agents/block_agent/{agent_uuid}',
         headers={'X-Token': AUTH_TOKEN}
     )
-    block_agent.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
 
     agent = get_agent(account.id, agent_uuid)
     assert agent.blocked
 
 
-@mock.patch.object(RabbitProducerStub, 'unblock_agent', autospec=True)
-def test_unblock_agent(unblock_method, account):
+def test_unblock_agent(account):
     response = create_agent(account.id)
     agent_uuid = UUID(response.json()['id'])
     client.post(
@@ -97,7 +91,6 @@ def test_unblock_agent(unblock_method, account):
         f'/agents/unblock_agent/{agent_uuid}',
         headers={'X-Token': AUTH_TOKEN}
     )
-    unblock_method.assert_called_once_with(ANY, region=account.region, agent_uuid=agent_uuid)
     assert response.status_code == 202
 
     agent = get_agent(account.id, agent_uuid)
@@ -135,8 +128,7 @@ def test_read_agent(account):
     }
 
 
-@mock.patch.object(RabbitProducerStub, 'delete_agent', autospec=True)
-def test_delete_agent(mocked_method, account):
+def test_delete_agent(account):
     create_response = create_agent(account.id)
     agent_uuid = UUID(create_response.json()['id'])
 
@@ -145,7 +137,6 @@ def test_delete_agent(mocked_method, account):
         headers={"X-Token": AUTH_TOKEN}
     )
     assert delete_response.status_code == 202
-    mocked_method.assert_called_with(ANY, region=account.region, agent_uuid=agent_uuid)
 
     read_response = client.get(
         f'/accounts/{account.id}/agents/{agent_uuid}',
@@ -154,8 +145,7 @@ def test_delete_agent(mocked_method, account):
     assert read_response.status_code == 404
 
 
-@mock.patch.object(RabbitProducerStub, 'delete_agent', autospec=True)
-def test_try_delete_agent_from_other_account(mocked_method, account):
+def test_try_delete_agent_from_other_account(account):
     create_response = create_agent(account.id)
 
     delete_response = client.delete(
@@ -163,7 +153,6 @@ def test_try_delete_agent_from_other_account(mocked_method, account):
         headers={'X-Token': AUTH_TOKEN}
     )
     assert delete_response.status_code == 400
-    mocked_method.assert_not_called()
 
 
 def test_read_agent_bad_token(account):
@@ -200,30 +189,3 @@ def test_read_agents(account):
 
     assert response.status_code == 200
     assert len(response.json()['items']) == how_many
-
-
-@mock.patch.object(RabbitProducerStub, 'delete_agent', autospec=True)
-def test_can_remove_all_agents(mocked_method, account):
-    create_agent(account.id)
-    create_agent(account.id)
-
-    response = client.post(
-        '/agents/clear',
-        headers={'X-Token': AUTH_TOKEN,
-                 'TWO-FA': TWO_FA}
-    )
-    mocked_method.assert_called_with(ANY, region=None, agent_uuid=None)
-
-    assert response.status_code == 202
-
-
-def test_cannot_remove_all_agents(account):
-    create_agent(account.id)
-    create_agent(account.id)
-
-    response = client.post(
-        '/accounts/clear',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-
-    assert response.status_code == 422

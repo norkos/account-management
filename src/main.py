@@ -10,7 +10,7 @@ from scout_apm.api import Config
 from scout_apm.async_.starlette import ScoutMiddleware
 
 from acm_service.utils.env import PORT, REDIS_URL
-from acm_service.routers import accounts, agents
+from acm_service.routers import accounts, agents, dev
 from acm_service.dependencies import get_event_broker_connection, get_cache_connection, get_cached_agent_dal, \
     get_cached_account_dal, get_agent_dal, get_account_dal
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
@@ -32,6 +32,7 @@ app = FastAPI(
 )
 app.include_router(accounts.router)
 app.include_router(agents.router)
+app.include_router(dev.router)
 
 Config.set(
     key=SCOUT_KEY,

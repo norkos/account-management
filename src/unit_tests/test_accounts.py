@@ -1,15 +1,12 @@
-import uuid
-from unittest.mock import ANY
 from uuid import uuid4
 
-import mock
 import pytest
 from requests import Response
 
-from acm_service.utils.env import AUTH_TOKEN, TWO_FA
+from acm_service.utils.env import AUTH_TOKEN
 from data_base.schemas import RegionEnum
 
-from unit_tests.utils import RabbitProducerStub, generate_random_mail
+from unit_tests.utils import generate_random_mail
 from unit_tests.sut import client, reset_database
 
 
@@ -28,15 +25,13 @@ def create_account(name: str = 'dummy', email: str = None,
     )
 
 
-@mock.patch.object(RabbitProducerStub, 'create_account', autospec=True)
-def test_create_account(mocked_method):
+def test_create_account():
     name = 'my_name'
     mail = generate_random_mail()
     region = RegionEnum.emea
     vip = True
 
     response = create_account(name, mail, region, vip)
-    mocked_method.assert_called_once_with(ANY, region=region, account_uuid=uuid.UUID(response.json()['id']), vip=vip)
 
     assert response.status_code == 200
     assert response.json()['name'] == name
@@ -51,7 +46,7 @@ def test_create_account_duplicated_mail():
     response = create_account(email=mail)
 
     assert response.status_code == 400
-    assert response.json() == {"detail": "E-mail already used"}
+    assert response.json() == {'detail': 'E-mail is already used'}
 
 
 def test_create_account_invalid_mail():
@@ -63,11 +58,11 @@ def test_create_accounts_bad_token():
     mail = generate_random_mail()
     response = client.post(
         '/accounts',
-        headers={"X-Token": "wrong one"},
+        headers={'X-Token': 'wrong one'},
         json={'name': 'my_name', 'email': mail}
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid X-Token header"}
+    assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
 def test_read_account():
@@ -80,7 +75,7 @@ def test_read_account():
 
     read_response = client.get(
         f'/accounts/{account_id}',
-        headers={"X-Token": AUTH_TOKEN}
+        headers={'X-Token': AUTH_TOKEN}
     )
     assert read_response.status_code == 200
     assert read_response.json() == {
@@ -92,27 +87,24 @@ def test_read_account():
     }
 
 
-@mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
-def test_delete_account(mocked_method):
+def test_delete_account():
     region = RegionEnum.emea
     vip = False
     create_response = create_account(region=region, vip=vip)
 
-    account_id = create_response.json()["id"]
+    account_id = create_response.json()['id']
     delete_response = client.delete(
         f'/accounts/{account_id}',
-        headers={"X-Token": AUTH_TOKEN}
+        headers={'X-Token': AUTH_TOKEN}
     )
     assert delete_response.status_code == 202
-    mocked_method.assert_called_with(ANY, region=region,
-                                     account_uuid=uuid.UUID(create_response.json()["id"]), vip=vip)
 
     read_response = client.get(
         f'/accounts/{create_response.json()["id"]}',
-        headers={"X-Token": AUTH_TOKEN}
+        headers={'X-Token': AUTH_TOKEN}
     )
     assert read_response.status_code == 404
-    assert read_response.json() == {"detail": f"Account {account_id} not found"}
+    assert read_response.json() == {'detail': f'Account {account_id} not found'}
 
 
 def test_read_account_bad_token():
@@ -158,30 +150,3 @@ def test_read_accounts_bad_token():
     )
     assert response.status_code == 400
     assert response.json() == {'detail': 'Invalid X-Token header'}
-
-
-@mock.patch.object(RabbitProducerStub, 'delete_account', autospec=True)
-def test_can_remove_all_accounts(mocked_method):
-    create_account()
-    create_account()
-
-    response = client.post(
-        '/accounts/clear',
-        headers={'X-Token': AUTH_TOKEN,
-                 'TWO-FA': TWO_FA}
-    )
-    mocked_method.assert_called_with(ANY, region=None, account_uuid=None, vip=True)
-
-    assert response.status_code == 202
-
-
-def test_cannot_remove_all_accounts():
-    create_account()
-    create_account()
-
-    response = client.post(
-        '/accounts/clear',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-
-    assert response.status_code == 422

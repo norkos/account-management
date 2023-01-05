@@ -67,7 +67,7 @@ class RestClient:
                                          {'x-token': self._token,
                                           'two-fa': self._two_fa},
                                          ) as session:
-            await session.post(f'{self._url}/accounts/clear')
+            await session.post(f'{self._url}/dev/erase_db')
 
     async def get_all_agents(self) -> int:
         async with aiohttp.ClientSession(headers=
