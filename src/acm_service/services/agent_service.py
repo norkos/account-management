@@ -1,7 +1,6 @@
 import logging
 from uuid import UUID
 
-from fastapi import status, Response
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.data_base.repositories import AccountRepository, AgentRepository
@@ -27,26 +26,26 @@ class AgentService:
     async def get(self, agent_id: UUID) -> Agent | None:
         return await self._agents.get(agent_id)
 
-    async def block_agent(self, agent_uuid: UUID) -> bool:
-        logger.info(f'Getting agent to be blocked {agent_uuid}')
-        agent = await self._agents.get(agent_uuid)
+    async def block_agent(self, agent_id: UUID) -> bool:
+        logger.info(f'Getting agent to be blocked {agent_id}')
+        agent = await self._agents.get(agent_id)
         if agent is None:
             return False
 
         region = (await self._accounts.get(agent.account_id)).region
-        await self._agents.update(agent_uuid, blocked=True)
-        await self._producer.block_agent(region, agent_uuid)
+        await self._agents.update(agent_id, blocked=True)
+        await self._producer.block_agent(region, agent_id)
         return True
 
-    async def unblock_agent(self, agent_uuid: UUID) -> bool:
-        logger.info(f'Getting agent to be unblocked {agent_uuid}')
-        agent = await self._agents.get(agent_uuid)
+    async def unblock_agent(self, agent_id: UUID) -> bool:
+        logger.info(f'Getting agent to be unblocked {agent_id}')
+        agent = await self._agents.get(agent_id)
         if agent is None:
             return False
 
         region = (await self._accounts.get(agent.account_id)).region
-        await self._agents.update(agent_uuid, blocked=False)
-        await self._producer.unblock_agent(region, agent_uuid)
+        await self._agents.update(agent_id, blocked=False)
+        await self._producer.unblock_agent(region, agent_id)
         return True
 
     async def get_agent_by_email(self, email: str):
@@ -58,7 +57,7 @@ class AgentService:
     async def get_all(self):
         return await self._agents.get_all()
 
-    async def create_agent(self, name: str, email: str, account_id: UUID) -> Agent:
+    async def create(self, name: str, email: str, account_id: UUID) -> Agent:
         if await self._agents.get_agent_by_email(email):
             raise DuplicatedMailException()
 
@@ -70,7 +69,7 @@ class AgentService:
         await self._producer.create_agent(region=account.region, agent_uuid=result.id)
         return Agent.from_orm(result)
 
-    async def delete_agent(self, account_id, agent_id):
+    async def delete(self, account_id: UUID, agent_id: UUID):
         agent = await self._agents.get(agent_id)
         account = await self._accounts.get(account_id)
 

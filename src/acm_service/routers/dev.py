@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import Depends
 from fastapi import APIRouter, status
 
-from acm_service.dependencies import get_token_header, get_2fa_token_header, get_account_dal
+from acm_service.dependencies import get_token_header, get_2fa_token_header, get_account_repository
 from acm_service.data_base.repositories import AccountRepository
 from acm_service.utils.logconf import DEFAULT_LOGGER
 
@@ -20,6 +20,6 @@ router = APIRouter(
 
 @router.post('/erase_db', status_code=status.HTTP_202_ACCEPTED)
 async def clear(_two_fa_token: Any = Depends(get_2fa_token_header),
-                accounts: AccountRepository = Depends(get_account_dal)):
+                accounts: AccountRepository = Depends(get_account_repository)):
     await accounts.delete_all()
     logger.info('All accounts were deleted')

@@ -1,152 +1,192 @@
 from uuid import uuid4
 
-import pytest
-from requests import Response
+from unittest import mock
+from unittest.mock import ANY
+from unit_tests.utils import generate_random_mail
+
+import namegenerator
+from pydantic import EmailStr
+from fastapi.testclient import TestClient
 
 from acm_service.utils.env import AUTH_TOKEN
-from data_base.schemas import RegionEnum
+from acm_service.data_base.schemas import RegionEnum, AccountWithoutAgents
+from acm_service.services.account_service import AccountService
+from acm_service.services.utils import DuplicatedMailException
 
-from unit_tests.utils import generate_random_mail
-from unit_tests.sut import client, reset_database
+from main import app
+
+client = TestClient(app)
+
+simple_account = AccountWithoutAgents(id=uuid4(),
+                                      name=namegenerator.gen(),
+                                      email=EmailStr(generate_random_mail()),
+                                      region=RegionEnum.emea,
+                                      vip=True)
 
 
-@pytest.fixture(autouse=True)
-def run_before_and_after_tests(tmpdir):
-    reset_database()
+@mock.patch.object(AccountService, 'create', return_value=simple_account, autospec=True)
+def test_create_account(mocked_method):
+    #   given
+    name = simple_account.name
+    email = simple_account.email
+    region = simple_account.region
+    vip = simple_account.vip
 
-
-def create_account(name: str = 'dummy', email: str = None,
-                   region: RegionEnum = RegionEnum.nam, vip: bool = False) -> Response:
-    return client.post(
+    #   when
+    response = client.post(
         '/accounts',
         headers={'X-Token': AUTH_TOKEN},
-        json={'name': name, 'email': email if email is not None else generate_random_mail(),
-              'region': region.value, 'vip': str(vip)}
+        json={'name': name, 'email': email, 'region': region, 'vip': str(vip)}
     )
 
-
-def test_create_account():
-    name = 'my_name'
-    mail = generate_random_mail()
-    region = RegionEnum.emea
-    vip = True
-
-    response = create_account(name, mail, region, vip)
-
+    #   then
+    mocked_method.assert_called_once_with(ANY, name=name, email=email, region=region, vip=vip)
     assert response.status_code == 200
     assert response.json()['name'] == name
-    assert response.json()['email'] == mail
+    assert response.json()['email'] == email
     assert response.json()['region'] == region
     assert response.json()['vip'] == vip
 
 
-def test_create_account_duplicated_mail():
-    mail = generate_random_mail()
-    create_account(email=mail)
-    response = create_account(email=mail)
+@mock.patch.object(AccountService, 'create', autospec=True)
+def test_create_account_duplicated_mail(mocked_method):
+    #   given
+    mocked_method.side_effect = DuplicatedMailException()
 
+    #   when
+    response = client.post(
+        '/accounts',
+        headers={'X-Token': AUTH_TOKEN},
+        json={'name': simple_account.name, 'email': simple_account.email,
+              'region': simple_account.region, 'vip': str(simple_account.vip)}
+    )
+
+    #   then
     assert response.status_code == 400
     assert response.json() == {'detail': 'E-mail is already used'}
 
 
 def test_create_account_invalid_mail():
-    response = create_account('my_name2', 'my_mailman.com')
+    #   given
+    email = 'invalid'
+
+    #   when
+    response = client.post(
+        '/accounts',
+        headers={'X-Token': AUTH_TOKEN},
+        json={'name': simple_account.name, 'email': email,
+              'region': simple_account.region, 'vip': str(simple_account.vip)}
+    )
+
+    #   then
     assert response.status_code == 422
 
 
 def test_create_accounts_bad_token():
-    mail = generate_random_mail()
+    #   given
+    token = 'wrong one'
+
+    #   when
     response = client.post(
         '/accounts',
-        headers={'X-Token': 'wrong one'},
-        json={'name': 'my_name', 'email': mail}
+        headers={'X-Token': token},
+        json={'name': simple_account.name, 'email': simple_account.email}
     )
+
+    #   then
     assert response.status_code == 400
     assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
-def test_read_account():
-    name = 'my_name'
-    mail = generate_random_mail()
-    region = RegionEnum.emea
-    vip = True
-    create_response = create_account(name, mail, region, vip)
-    account_id = create_response.json()['id']
-
+@mock.patch.object(AccountService, 'get', return_value=simple_account, autospec=True)
+def test_read_account(mocked_method):
+    #   given & when
     read_response = client.get(
-        f'/accounts/{account_id}',
+        f'/accounts/{simple_account.id}',
         headers={'X-Token': AUTH_TOKEN}
     )
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, account_id=simple_account.id)
     assert read_response.status_code == 200
     assert read_response.json() == {
-        'id': account_id,
-        'name':  name,
-        'email': mail,
-        'region': region.value,
-        'vip': vip
+        'id': str(simple_account.id),
+        'name': simple_account.name,
+        'email': simple_account.email,
+        'region': simple_account.region.value,
+        'vip': simple_account.vip
     }
 
 
-def test_delete_account():
-    region = RegionEnum.emea
-    vip = False
-    create_response = create_account(region=region, vip=vip)
-
-    account_id = create_response.json()['id']
-    delete_response = client.delete(
-        f'/accounts/{account_id}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-    assert delete_response.status_code == 202
-
-    read_response = client.get(
-        f'/accounts/{create_response.json()["id"]}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-    assert read_response.status_code == 404
-    assert read_response.json() == {'detail': f'Account {account_id} not found'}
-
-
 def test_read_account_bad_token():
-    create_response = create_account()
+    #   given
+    token = 'bad_one'
 
+    #   when
     read_response = client.get(
-        f'/accounts/{create_response.json()["id"]}',
-        headers={'X-Token': 'wrong one'}
+        f'/accounts/{simple_account.id}',
+        headers={'X-Token': token}
     )
 
+    #   then
     assert read_response.status_code == 400
     assert read_response.json() == {'detail': 'Invalid X-Token header'}
 
 
-def test_read_account_not_found():
+@mock.patch.object(AccountService, 'delete', return_value=simple_account, autospec=True)
+def test_delete_account(mocked_method):
+    #   given & when
+    response = client.delete(
+        f'/accounts/{simple_account.id}',
+        headers={'X-Token': AUTH_TOKEN}
+    )
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, account_id=simple_account.id)
+    assert response.status_code == 202
+
+
+@mock.patch.object(AccountService, 'get', return_value=None, autospec=True)
+def test_read_account_not_found(mocked_method):
+    #   given
     random_uuid = uuid4()
+
+    #   when
     response = client.get(
         f'/accounts/{random_uuid}',
-        headers={"X-Token": AUTH_TOKEN}
+        headers={'X-Token': AUTH_TOKEN}
     )
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, account_id=random_uuid)
     assert response.status_code == 404
     assert response.json() == {'detail': f'Account {random_uuid} not found'}
 
 
-def test_read_accounts():
-    how_many = 20
-    for _ in range(how_many):
-        create_account()
-
+@mock.patch.object(AccountService, 'get_all', return_value=[simple_account, simple_account], autospec=True)
+def test_read_accounts(mocked_method):
+    #   given & when
     response = client.get(
         '/accounts?page=1&size=100',
         headers={'X-Token': AUTH_TOKEN}
     )
 
+    #   then
+    mocked_method.assert_called_once_with(ANY)
     assert response.status_code == 200
-    assert len(response.json()['items']) == how_many
+    assert len(response.json()['items']) == 2
 
 
 def test_read_accounts_bad_token():
+    #   given
+    token = 'wrong_token'
+
+    #   when
     response = client.get(
         '/accounts/',
-        headers={'X-Token': 'wrong one'}
+        headers={'X-Token': token}
     )
+
+    #   then
     assert response.status_code == 400
     assert response.json() == {'detail': 'Invalid X-Token header'}

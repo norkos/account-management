@@ -11,15 +11,16 @@ from scout_apm.async_.starlette import ScoutMiddleware
 
 from acm_service.utils.env import PORT, REDIS_URL
 from acm_service.routers import accounts, agents, dev
-from acm_service.dependencies import get_event_broker_connection, get_cache_connection, get_cached_agent_dal, \
-    get_cached_account_dal, get_agent_dal, get_account_dal
+from acm_service.dependencies import get_event_broker_connection, \
+    get_cache_connection, get_agent_service, get_account_service, get_agent_service_with_cache, \
+    get_account_service_with_cache
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
 from acm_service.events.connection import disconnect_event_broker
 from acm_service.events.producer import get_event_producer, get_local_event_producer
 from acm_service.events.consumer import get_rabbit_consumer
-from acm_service.cache.cached_dal import Cache
+from acm_service.cache.repositories import Cache
 
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
@@ -75,8 +76,8 @@ async def prepare_cache():
         return
 
     Cache.get_instance().connect_to_cache_service(cache_connection)
-    app.dependency_overrides[get_agent_dal] = get_cached_agent_dal
-    app.dependency_overrides[get_account_dal] = get_cached_account_dal
+    app.dependency_overrides[get_agent_service] = get_agent_service_with_cache
+    app.dependency_overrides[get_account_service] = get_account_service_with_cache
     logger.info('Cache is ready')
 
 

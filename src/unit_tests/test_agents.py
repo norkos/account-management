@@ -1,25 +1,22 @@
 from uuid import uuid4, UUID
-
 import mock
-import pytest
+import namegenerator
+from unit_tests.utils import generate_random_mail
+from unittest.mock import ANY
 
 from requests import Response
+from pydantic import EmailStr
+
+from fastapi.testclient import TestClient
 
 from acm_service.utils.env import AUTH_TOKEN
-from acm_service.data_base.schemas import Agent, Account
+from acm_service.data_base.schemas import Agent
+from acm_service.services.agent_service import AgentService
+from acm_service.services.utils import DuplicatedMailException, InconsistencyException
 
-from unit_tests.utils import RabbitProducerStub, generate_random_mail
-from unit_tests.sut import client, reset_database, account_dal
+from main import app
 
-
-@pytest.fixture(autouse=True)
-def run_before_and_after_tests(tmpdir):
-    reset_database()
-
-
-@pytest.fixture
-def account() -> Account:
-    return account_dal.create_random()
+client = TestClient(app)
 
 
 def get_agent(account_uuid: UUID, agent_uuid: UUID) -> Agent:
@@ -39,153 +36,194 @@ def create_agent(account_uuid: UUID, name: str = 'dummy', email: str = None, tok
     )
 
 
-def test_create_agent(account):
-    name = 'my_name'
-    mail = 'test@mail.com'
+simple_agent = Agent(id=uuid4(),
+                     name=namegenerator.gen(),
+                     email=EmailStr(generate_random_mail()),
+                     blocked=False,
+                     account_id=uuid4())
 
-    response = create_agent(account.id, name, mail)
+
+@mock.patch.object(AgentService, 'create', return_value=simple_agent, autospec=True)
+def test_create_agent(mocked_method):
+    #   given & when
+    response = client.post(
+        f'/accounts/{simple_agent.account_id}/agents',
+        headers={'X-Token': AUTH_TOKEN},
+        json={'name': simple_agent.name, 'email': simple_agent.email})
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, name=simple_agent.name,
+                                          email=simple_agent.email,
+                                          account_id=simple_agent.account_id)
 
     assert response.status_code == 200
-    assert response.json()['name'] == name
-    assert response.json()['email'] == mail
+    assert response.json()['name'] == simple_agent.name
+    assert response.json()['email'] == simple_agent.email
 
 
-def test_create_agent_duplicated_mail(account):
-    duplicate_mail = 'my_mail@mail.com'
-    create_agent(account.id, email=duplicate_mail)
-    response = create_agent(account.id, email=duplicate_mail)
+@mock.patch.object(AgentService, 'create', autospec=True)
+def test_create_agent_duplicated_mail(mocked_method):
+    #   given
+    mocked_method.side_effect = DuplicatedMailException()
 
+    #   when
+    response = client.post(
+        f'/accounts/{simple_agent.account_id}/agents',
+        headers={'X-Token': AUTH_TOKEN},
+        json={'name': simple_agent.name, 'email': simple_agent.email}
+    )
+
+    #   then
     assert response.status_code == 400
-    assert response.json() == {'detail': f'E-mail is already used'}
+    assert response.json() == {'detail': 'E-mail is already used'}
 
 
-def test_block_agent(account):
-    response = create_agent(account.id)
-    agent_uuid = UUID(response.json()['id'])
-    is_blocked = response.json()['blocked']
+def test_create_account_invalid_mail():
+    #   given
+    email = 'invalid'
 
-    # not blocked after creation
-    assert is_blocked is False
-
-    # when blocking
+    #   when
     response = client.post(
-        f'/agents/block_agent/{agent_uuid}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-    assert response.status_code == 202
+        f'/accounts/{simple_agent.account_id}/agents',
+        headers={'X-Token': AUTH_TOKEN},
+        json={'name': simple_agent.name, 'email': email})
 
-    agent = get_agent(account.id, agent_uuid)
-    assert agent.blocked
-
-
-def test_unblock_agent(account):
-    response = create_agent(account.id)
-    agent_uuid = UUID(response.json()['id'])
-    client.post(
-        f'/agents/block_agent/{agent_uuid}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-
-    #  when unblocking
-    response = client.post(
-        f'/agents/unblock_agent/{agent_uuid}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-    assert response.status_code == 202
-
-    agent = get_agent(account.id, agent_uuid)
-    assert not agent.blocked
-
-
-def test_create_account_invalid_mail(account):
-    response = create_agent(account.id, email='my_mail_mail.com')
+    #   then
     assert response.status_code == 422
 
 
-def test_create_accounts_bad_token(account):
-    response = create_agent(account.id, token='dummy_token')
+@mock.patch.object(AgentService, 'block_agent', return_value=simple_agent, autospec=True)
+def test_block_agent(mocked_method):
+    #   given & when
+    response = client.post(
+        f'/agents/block_agent/{simple_agent.id}',
+        headers={'X-Token': AUTH_TOKEN}
+    )
 
+    #   then
+    mocked_method.assert_called_once_with(ANY, agent_id=simple_agent.id)
+    assert response.status_code == 202
+
+
+@mock.patch.object(AgentService, 'unblock_agent', return_value=simple_agent, autospec=True)
+def test_unblock_agent(mocked_method):
+    #   given & when
+    response = client.post(
+        f'/agents/unblock_agent/{simple_agent.id}',
+        headers={'X-Token': AUTH_TOKEN}
+    )
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, agent_id=simple_agent.id)
+    assert response.status_code == 202
+
+
+def test_create_accounts_bad_token():
+    #   given
+    token = 'wrong_one'
+
+    #   when
+    response = client.post(
+        f'/accounts/{simple_agent.account_id}/agents',
+        headers={'X-Token': token},
+        json={'name': simple_agent.name, 'email': simple_agent.email})
+
+    #   then
     assert response.status_code == 400
     assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
-def test_read_agent(account):
-    name = 'my_name'
-    mail = 'test@mail.com'
-    create_response = create_agent(account.id, name, mail)
-
-    read_response = client.get(
-        f'/accounts/{account.id}/agents/{create_response.json()["id"]}',
+@mock.patch.object(AgentService, 'get', return_value=simple_agent, autospec=True)
+def test_read_agent(mocked_method):
+    #   given & when
+    response = client.get(
+        f'/accounts/{simple_agent.account_id}/agents/{simple_agent.id}',
         headers={'X-Token': AUTH_TOKEN}
     )
-    assert read_response.status_code == 200
-    assert read_response.json() == {
-        'id': create_response.json()['id'],
-        'name': name,
-        'email': mail,
-        'account_id': str(account.id),
-        'blocked': False
+
+    #   then
+    mocked_method.assert_called_once_with(ANY, agent_id=simple_agent.id)
+    assert response.status_code == 200
+    assert response.json() == {
+        'id': str(simple_agent.id),
+        'name': simple_agent.name,
+        'email': simple_agent.email,
+        'account_id': str(simple_agent.account_id),
+        'blocked': simple_agent.blocked
     }
 
 
-def test_delete_agent(account):
-    create_response = create_agent(account.id)
-    agent_uuid = UUID(create_response.json()['id'])
-
-    delete_response = client.delete(
-        f'/accounts/{account.id}/agents/{agent_uuid}',
+@mock.patch.object(AgentService, 'delete', return_value=simple_agent, autospec=True)
+def test_delete_agent(mocked_method):
+    #   given & when
+    response = client.delete(
+        f'/accounts/{simple_agent.account_id}/agents/{simple_agent.id}',
         headers={"X-Token": AUTH_TOKEN}
     )
-    assert delete_response.status_code == 202
 
-    read_response = client.get(
-        f'/accounts/{account.id}/agents/{agent_uuid}',
+    #   then
+    mocked_method.assert_called_once_with(ANY, account_id=simple_agent.account_id, agent_id=simple_agent.id)
+    assert response.status_code == 202
+
+
+@mock.patch.object(AgentService, 'delete', return_value=simple_agent, autospec=True)
+def test_try_delete_agent_from_other_account(mocked_method):
+    #   given
+    mocked_method.side_effect = InconsistencyException()
+    random_account = str(uuid4())
+
+    #   when
+    response = client.delete(
+        f'/accounts/{random_account}/agents/{simple_agent.id}',
         headers={'X-Token': AUTH_TOKEN}
     )
-    assert read_response.status_code == 404
+
+    #   then
+    assert response.status_code == 400
 
 
-def test_try_delete_agent_from_other_account(account):
-    create_response = create_agent(account.id)
+@mock.patch.object(AgentService, 'get', return_value=simple_agent, autospec=True)
+def test_read_agent_bad_token(mocked_method):
+    #   given
+    token = 'wrong_one'
 
-    delete_response = client.delete(
-        f'/accounts/{str(uuid4())}/agents/{create_response.json()["id"]}',
-        headers={'X-Token': AUTH_TOKEN}
-    )
-    assert delete_response.status_code == 400
-
-
-def test_read_agent_bad_token(account):
-    create_response = create_agent(account.id)
-
+    #   when
     read_response = client.get(
-        f'/accounts/{account.id}/agents/{create_response.json()["id"]}',
-        headers={'X-Token': 'wrong one'}
+        f'/accounts/{simple_agent.account_id}/agents/{simple_agent.id}',
+        headers={'X-Token': token}
     )
 
+    #   then
+    mocked_method.assert_not_called()
     assert read_response.status_code == 400
-    assert read_response.json() == {"detail": "Invalid X-Token header"}
+    assert read_response.json() == {'detail': 'Invalid X-Token header'}
 
 
-def test_read_agent_not_found(account):
+@mock.patch.object(AgentService, 'get', return_value=None, autospec=True)
+def test_read_agent_not_found(_mocked_method):
+    #   given
     random_uuid = uuid4()
+
+    #   when
     response = client.get(
-        f'/accounts/{account.id}/agents/{random_uuid}',
+        f'/accounts/{random_uuid}/agents/{random_uuid}',
         headers={'X-Token': AUTH_TOKEN}
     )
+
+    #   then
     assert response.status_code == 404
     assert response.json() == {'detail': f'Agent {random_uuid} not found'}
 
 
-def test_read_agents(account):
-    how_many = 20
-    for _ in range(how_many):
-        create_agent(account.id)
-
+@mock.patch.object(AgentService, 'get_agents_for_account', return_value=[simple_agent, simple_agent], autospec=True)
+def test_read_agents(mocked_method):
+    #   given & when
     response = client.get(
-        f'/accounts/{account.id}/agents',
+        f'/accounts/{simple_agent.account_id}/agents',
         headers={'X-Token': AUTH_TOKEN}
     )
 
+    #   then
+    mocked_method.assert_called_once_with(ANY, account_id=simple_agent.account_id)
     assert response.status_code == 200
-    assert len(response.json()['items']) == how_many
+    assert len(response.json()['items']) == 2

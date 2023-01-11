@@ -1,7 +1,7 @@
-import uuid
 from uuid import uuid4
 from typing import List
 
+import namegenerator
 from aio_pika.abc import AbstractRobustConnection
 from pydantic import EmailStr
 
@@ -11,7 +11,7 @@ from acm_service.data_base.schemas import Account, Agent, RegionEnum
 
 
 def generate_random_mail() -> str:
-    return f'{str(uuid.uuid4())}@test.com'
+    return f'{namegenerator.gen()}@gmail.com'
 
 
 class RabbitProducerStub(EventProducer):
