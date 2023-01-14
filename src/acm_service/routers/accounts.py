@@ -55,10 +55,10 @@ async def delete_account(account_id: UUID, account_service: AccountService = Dep
 async def create_account(account: schemas.AccountCreate,
                          account_service: AccountService = Depends(get_account_service)):
     try:
-        return await account_service.create(name=account.name,
-                                            email=account.email,
-                                            region=account.region,
-                                            vip=account.vip)
+        return await account_service.create_account(name=account.name,
+                                                    email=account.email,
+                                                    region=account.region,
+                                                    vip=account.vip)
 
     except DuplicatedMailException:
         raise_email_already_used()

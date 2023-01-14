@@ -1,7 +1,6 @@
 import logging
 from uuid import UUID
 
-
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.data_base.repositories import AccountRepository, AgentRepository
 from acm_service.events.producer import EventProducer
@@ -57,7 +56,7 @@ class AgentService:
     async def get_all(self):
         return await self._agents.get_all()
 
-    async def create(self, name: str, email: str, account_id: UUID) -> Agent:
+    async def create_agent(self, name: str, email: str, account_id: UUID) -> Agent:
         if await self._agents.get_agent_by_email(email):
             raise DuplicatedMailException()
 

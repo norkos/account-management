@@ -35,7 +35,7 @@ def test_create_account(mocked_method, account_name, account_email, account_serv
     vip = False
 
     #   when
-    result = asyncio.run(account_service.create(account_name, account_email, region, vip))
+    result = asyncio.run(account_service.create_account(account_name, account_email, region, vip))
 
     #   then
     mocked_method.assert_called_once_with(ANY, region=region, account_uuid=result.id, vip=vip)
@@ -49,11 +49,11 @@ def test_create_account_duplicated_mail(account_name, account_email, account_ser
     #   given
     region = RegionEnum.emea
     vip = False
-    asyncio.run(account_service.create(account_name, account_email, region, vip))
+    asyncio.run(account_service.create_account(account_name, account_email, region, vip))
 
     #   when && then
     with pytest.raises(DuplicatedMailException):
-        asyncio.run(account_service.create(account_name + account_name, account_email, region, vip))
+        asyncio.run(account_service.create_account(account_name + account_name, account_email, region, vip))
 
 
 def test_create_account_invalid_email(account_name, account_email, account_service):
@@ -63,14 +63,14 @@ def test_create_account_invalid_email(account_name, account_email, account_servi
 
     #   when && then
     with pytest.raises(ValidationError):
-        asyncio.run(account_service.create(account_name, 'account_email', region, vip))
+        asyncio.run(account_service.create_account(account_name, 'account_email', region, vip))
 
 
 def test_read_account(account_name, account_email, account_service):
     #   given
     region = RegionEnum.emea
     vip = False
-    created = asyncio.run(account_service.create(account_name, account_email, region, vip))
+    created = asyncio.run(account_service.create_account(account_name, account_email, region, vip))
 
     #   when
     result = asyncio.run(account_service.get(created.id))
@@ -87,7 +87,7 @@ def test_delete_account(mocked_method, account_name, account_email, account_serv
     #   given
     region = RegionEnum.emea
     vip = True
-    created = asyncio.run(account_service.create(account_name, account_email, region, vip))
+    created = asyncio.run(account_service.create_account(account_name, account_email, region, vip))
 
     #   when
     asyncio.run(account_service.delete(created.id))
@@ -112,7 +112,7 @@ def test_read_accounts(account_name, account_email, account_service):
     vip = True
     how_many = 20
     for x in range(how_many):
-        asyncio.run(account_service.create(account_name, str(x) + account_email, region, vip))
+        asyncio.run(account_service.create_account(account_name, str(x) + account_email, region, vip))
 
     #   when
     result = asyncio.run(account_service.get_all())

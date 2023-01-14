@@ -39,7 +39,7 @@ class AccountService:
             await self._producer.delete_agent(region=account.region, agent_uuid=agent.id)
         logger.info(f'Account {account_id} was deleted')
 
-    async def create(self, name: str, email: str, region: str, vip: bool) -> AccountWithoutAgents:
+    async def create_account(self, name: str, email: str, region: str, vip: bool) -> AccountWithoutAgents:
         if await self._accounts.get_account_by_email(email):
             raise DuplicatedMailException()
 
@@ -48,3 +48,6 @@ class AccountService:
 
         await self._producer.create_account(region=result.region, account_uuid=result.id, vip=vip)
         return result
+
+    async def delete_all(self) -> None:
+        await self._accounts.delete_all()

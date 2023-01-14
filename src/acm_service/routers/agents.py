@@ -66,7 +66,7 @@ async def read_all_agents(agent_service: AgentService = Depends(get_agent_servic
 @router.post('/accounts/{account_id}/agents', response_model=Agent)
 async def create_agent(account_id: UUID, agent: AgentCreate, agent_service: AgentService = Depends(get_agent_service)):
     try:
-        result = await agent_service.create(
+        result = await agent_service.create_agent(
             name=agent.name, email=agent.email, account_id=account_id)
         return result
     except DuplicatedMailException:

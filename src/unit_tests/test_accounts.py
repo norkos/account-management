@@ -24,7 +24,7 @@ simple_account = AccountWithoutAgents(id=uuid4(),
                                       vip=True)
 
 
-@mock.patch.object(AccountService, 'create', return_value=simple_account, autospec=True)
+@mock.patch.object(AccountService, AccountService.create_account.__name__, return_value=simple_account, autospec=True)
 def test_create_account(mocked_method):
     #   given
     name = simple_account.name
@@ -48,7 +48,7 @@ def test_create_account(mocked_method):
     assert response.json()['vip'] == vip
 
 
-@mock.patch.object(AccountService, 'create', autospec=True)
+@mock.patch.object(AccountService, AccountService.create_account.__name__, autospec=True)
 def test_create_account_duplicated_mail(mocked_method):
     #   given
     mocked_method.side_effect = DuplicatedMailException()
@@ -98,7 +98,7 @@ def test_create_accounts_bad_token():
     assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
-@mock.patch.object(AccountService, 'get', return_value=simple_account, autospec=True)
+@mock.patch.object(AccountService, AccountService.get.__name__, return_value=simple_account, autospec=True)
 def test_read_account(mocked_method):
     #   given & when
     read_response = client.get(
@@ -133,7 +133,7 @@ def test_read_account_bad_token():
     assert read_response.json() == {'detail': 'Invalid X-Token header'}
 
 
-@mock.patch.object(AccountService, 'delete', return_value=simple_account, autospec=True)
+@mock.patch.object(AccountService, AccountService.delete.__name__, return_value=simple_account, autospec=True)
 def test_delete_account(mocked_method):
     #   given & when
     response = client.delete(
@@ -146,7 +146,7 @@ def test_delete_account(mocked_method):
     assert response.status_code == 202
 
 
-@mock.patch.object(AccountService, 'get', return_value=None, autospec=True)
+@mock.patch.object(AccountService, AccountService.get.__name__, return_value=None, autospec=True)
 def test_read_account_not_found(mocked_method):
     #   given
     random_uuid = uuid4()
@@ -163,7 +163,8 @@ def test_read_account_not_found(mocked_method):
     assert response.json() == {'detail': f'Account {random_uuid} not found'}
 
 
-@mock.patch.object(AccountService, 'get_all', return_value=[simple_account, simple_account], autospec=True)
+@mock.patch.object(AccountService, AccountService.get_all.__name__, return_value=[simple_account, simple_account],
+                   autospec=True)
 def test_read_accounts(mocked_method):
     #   given & when
     response = client.get(

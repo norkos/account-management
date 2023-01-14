@@ -43,7 +43,7 @@ simple_agent = Agent(id=uuid4(),
                      account_id=uuid4())
 
 
-@mock.patch.object(AgentService, 'create', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.create_agent.__name__, return_value=simple_agent, autospec=True)
 def test_create_agent(mocked_method):
     #   given & when
     response = client.post(
@@ -61,7 +61,7 @@ def test_create_agent(mocked_method):
     assert response.json()['email'] == simple_agent.email
 
 
-@mock.patch.object(AgentService, 'create', autospec=True)
+@mock.patch.object(AgentService, AgentService.create_agent.__name__, autospec=True)
 def test_create_agent_duplicated_mail(mocked_method):
     #   given
     mocked_method.side_effect = DuplicatedMailException()
@@ -92,7 +92,7 @@ def test_create_account_invalid_mail():
     assert response.status_code == 422
 
 
-@mock.patch.object(AgentService, 'block_agent', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.block_agent.__name__, return_value=simple_agent, autospec=True)
 def test_block_agent(mocked_method):
     #   given & when
     response = client.post(
@@ -105,7 +105,7 @@ def test_block_agent(mocked_method):
     assert response.status_code == 202
 
 
-@mock.patch.object(AgentService, 'unblock_agent', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.unblock_agent.__name__, return_value=simple_agent, autospec=True)
 def test_unblock_agent(mocked_method):
     #   given & when
     response = client.post(
@@ -133,7 +133,7 @@ def test_create_accounts_bad_token():
     assert response.json() == {'detail': 'Invalid X-Token header'}
 
 
-@mock.patch.object(AgentService, 'get', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.get.__name__, return_value=simple_agent, autospec=True)
 def test_read_agent(mocked_method):
     #   given & when
     response = client.get(
@@ -153,7 +153,7 @@ def test_read_agent(mocked_method):
     }
 
 
-@mock.patch.object(AgentService, 'delete', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.delete.__name__, return_value=simple_agent, autospec=True)
 def test_delete_agent(mocked_method):
     #   given & when
     response = client.delete(
@@ -166,7 +166,7 @@ def test_delete_agent(mocked_method):
     assert response.status_code == 202
 
 
-@mock.patch.object(AgentService, 'delete', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.delete.__name__, return_value=simple_agent, autospec=True)
 def test_try_delete_agent_from_other_account(mocked_method):
     #   given
     mocked_method.side_effect = InconsistencyException()
@@ -182,7 +182,7 @@ def test_try_delete_agent_from_other_account(mocked_method):
     assert response.status_code == 400
 
 
-@mock.patch.object(AgentService, 'get', return_value=simple_agent, autospec=True)
+@mock.patch.object(AgentService, AgentService.get.__name__, return_value=simple_agent, autospec=True)
 def test_read_agent_bad_token(mocked_method):
     #   given
     token = 'wrong_one'
@@ -199,7 +199,7 @@ def test_read_agent_bad_token(mocked_method):
     assert read_response.json() == {'detail': 'Invalid X-Token header'}
 
 
-@mock.patch.object(AgentService, 'get', return_value=None, autospec=True)
+@mock.patch.object(AgentService, AgentService.get.__name__, return_value=None, autospec=True)
 def test_read_agent_not_found(_mocked_method):
     #   given
     random_uuid = uuid4()
@@ -215,7 +215,8 @@ def test_read_agent_not_found(_mocked_method):
     assert response.json() == {'detail': f'Agent {random_uuid} not found'}
 
 
-@mock.patch.object(AgentService, 'get_agents_for_account', return_value=[simple_agent, simple_agent], autospec=True)
+@mock.patch.object(AgentService, AgentService.get_agents_for_account.__name__,
+                   return_value=[simple_agent, simple_agent], autospec=True)
 def test_read_agents(mocked_method):
     #   given & when
     response = client.get(
