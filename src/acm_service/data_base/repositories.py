@@ -27,15 +27,30 @@ def log_exception(coro):
         except BaseException as exc:
             logger.exception("Exception %s", exc)
             raise exc
+
     return wrap
 
 
-# todo add more methods
 class AbstractRepository(abc.ABC):
     async def get(self, reference):
         raise NotImplementedError
 
+    async def get_by(self, **kwargs):
+        raise NotImplementedError
+
     async def get_all(self):
+        raise NotImplementedError
+
+    async def create(self, **kwargs):
+        raise NotImplementedError
+
+    async def delete(self, reference):
+        raise NotImplementedError
+
+    async def delete_all(self):
+        raise NotImplementedError
+
+    async def update(self, reference, **kwargs):
         raise NotImplementedError
 
 
@@ -68,14 +83,24 @@ class AgentRepository(AbstractRepository):
                 return Agent.from_orm(new_agent)
 
     @log_exception
-    async def get_agent_by_email(self, email: str) -> Agent | None:
+    async def get_by(self, **kwargs) -> List[Agent]:
+        if 'email' in kwargs.keys():
+            return await self.get_agent_by_email(kwargs['email'])
+
+        if 'account_id' in kwargs.keys():
+            return await self.get_agents_for_account(kwargs['account_id'])
+
+        raise NotImplementedError
+
+    @log_exception
+    async def get_agent_by_email(self, email: str) -> List[Agent]:
         async with create_session() as session:
             async with session.begin():
                 query = await session.execute(select(AgentDB).where(AgentDB.email == email))
                 result = query.scalar()
                 if result:
-                    return Agent.from_orm(result)
-                return None
+                    return [Agent.from_orm(result)]
+                return []
 
     @log_exception
     async def get_agents_for_account(self, agent_uuid: UUID) -> List[Agent]:
@@ -121,6 +146,13 @@ class AccountRepository(AbstractRepository):
                 return None
 
     @log_exception
+    async def get_by(self, **kwargs) -> List[AccountWithoutAgents]:
+        if 'email' in kwargs.keys():
+            return await self.get_account_by_email(kwargs['email'])
+
+        raise NotImplementedError
+
+    @log_exception
     async def get_all(self) -> List[AccountWithoutAgents]:
         async with create_session() as session:
             async with session.begin():
@@ -148,14 +180,14 @@ class AccountRepository(AbstractRepository):
                 return None
 
     @log_exception
-    async def get_account_by_email(self, email: str) -> AccountWithoutAgents | None:
+    async def get_account_by_email(self, email: str) -> List[AccountWithoutAgents]:
         async with create_session() as session:
             async with session.begin():
                 query = await session.execute(select(AccountDB).where(AccountDB.email == email))
                 result = query.scalar()
                 if result:
-                    return AccountWithoutAgents.from_orm(result)
-                return None
+                    return [AccountWithoutAgents.from_orm(result)]
+                return []
 
     @log_exception
     async def delete_all(self) -> None:

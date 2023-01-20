@@ -5,7 +5,7 @@ import namegenerator
 from aio_pika.abc import AbstractRobustConnection
 from pydantic import EmailStr
 
-from acm_service.data_base.repositories import AccountRepository, AgentRepository
+from acm_service.data_base.repositories import AccountRepository, AbstractRepository
 from acm_service.events.producer import EventProducer
 from acm_service.data_base.schemas import Account, Agent, RegionEnum
 
@@ -38,7 +38,7 @@ class RabbitProducerStub(EventProducer):
         pass
 
 
-class AccountRepositoryStub(AccountRepository):
+class AccountRepositoryStub(AbstractRepository):
 
     def __init__(self):
         super().__init__()
@@ -63,34 +63,35 @@ class AccountRepositoryStub(AccountRepository):
             return self._accounts_by_uuid[account_uuid]
         return None
 
-    async def get_with_agents(self, account_uuid: str) -> Account | None:
-        if account_uuid in self._accounts_by_uuid:
-            return self._accounts_by_uuid[account_uuid]
-        return None
+    async def get_by(self, **kwargs) -> List[Account]:
+        if 'email' in kwargs.keys():
+            return self.get_account_by_email(kwargs['email'])
 
-    async def get_account_by_email(self, email: str) -> Account | None:
+        raise NotImplementedError
+
+    def get_account_by_email(self, email: str) -> List[Account]:
         if email in self._accounts_by_mail:
-            return self._accounts_by_mail[email]
-        return None
+            return [self._accounts_by_mail[email]]
+        return []
 
     async def get_all(self) -> List[Account]:
         return list(self._accounts_by_uuid.values())
 
-    async def delete(self, account_uuid: str):
+    async def delete(self, account_uuid: str) -> None:
         if account_uuid in self._accounts_by_uuid:
             del self._accounts_by_uuid[account_uuid]
 
-    async def update(self, account_uuid: str, **kwargs):
+    async def update(self, account_uuid: str, **kwargs) -> None:
         agent = self._accounts_by_uuid[account_uuid]
         for k in kwargs.keys():
             agent.__setattr__(k, kwargs[k])
 
-    async def delete_all(self):
+    async def delete_all(self) -> None:
         self._accounts_by_uuid = {}
         self._accounts_by_mail = {}
 
 
-class AgentRepositoryStub(AgentRepository):
+class AgentRepositoryStub(AbstractRepository):
 
     def __init__(self):
         super().__init__()
@@ -108,17 +109,26 @@ class AgentRepositoryStub(AgentRepository):
             return self._agents_by_uuid[agent_uuid]
         return None
 
-    async def get_agents_for_account(self, agent_uuid: str) -> List[Agent]:
+    async def get_by(self, **kwargs) -> List[Agent]:
+        if 'email' in kwargs.keys():
+            return self.get_agent_for_email(kwargs['email'])
+
+        if 'account_id' in kwargs.keys():
+            return self.get_agents_for_account(kwargs['account_id'])
+
+        raise NotImplementedError
+
+    def get_agent_for_email(self, email: str) -> List[Agent]:
+        if email in self._agents_by_mail.keys():
+            return [self._agents_by_mail[email]]
+        return []
+
+    def get_agents_for_account(self, agent_uuid: str) -> List[Agent]:
         result = []
         for elem in self._agents_by_uuid.values():
             if elem.account_id == agent_uuid:
                 result.append(elem)
         return result
-
-    async def get_agent_by_email(self, email: str) -> Agent | None:
-        if email in self._agents_by_mail:
-            return self._agents_by_mail[email]
-        return None
 
     async def get_all(self) -> List[Agent]:
         return list(self._agents_by_uuid.values())

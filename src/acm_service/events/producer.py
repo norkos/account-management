@@ -48,6 +48,10 @@ class EventProducer:
         self._connection = event_broker
 
     async def _send_customer_event(self, entity_uuid: UUID | None, routing_key: str) -> None:
+        if self._connection is None:
+            logger.warning(f'Connection to event broker do not exists')
+            return
+
         exchange_name = 'topic_customers'
         channel = await self._connection.channel()
         message_content = str(entity_uuid) if entity_uuid else '*'
@@ -92,15 +96,5 @@ class EventProducer:
         return await self._send_customer_event(account_uuid, routing_key)
 
 
-class LocalEventProducer(EventProducer):
-
-    async def _send_customer_event(self, entity_uuid: UUID, routing_key: str) -> None:
-        logger.info(f'Stubbed. Sending the event with body={entity_uuid} to routing key={routing_key}')
-
-
 def get_event_producer() -> EventProducer:
     return EventProducer.get_instance()
-
-
-def get_local_event_producer() -> EventProducer:
-    return LocalEventProducer()

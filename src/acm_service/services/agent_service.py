@@ -1,8 +1,9 @@
 import logging
+from typing import List
 from uuid import UUID
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.data_base.repositories import AccountRepository, AgentRepository
+from acm_service.data_base.repositories import AbstractRepository
 from acm_service.events.producer import EventProducer
 from acm_service.data_base.schemas import Agent
 from acm_service.services.utils import DuplicatedMailException, InconsistencyException
@@ -12,15 +13,12 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 
 class AgentService:
 
-    def __init__(self, agents: AgentRepository,
-                 accounts: AccountRepository,
+    def __init__(self, agents: AbstractRepository,
+                 accounts: AbstractRepository,
                  event_producer: EventProducer):
         self._agents = agents
         self._accounts = accounts
         self._producer = event_producer
-
-    def get_account_repository(self) -> AccountRepository:
-        return self._accounts
 
     async def get(self, agent_id: UUID) -> Agent | None:
         return await self._agents.get(agent_id)
@@ -47,17 +45,20 @@ class AgentService:
         await self._producer.unblock_agent(region, agent_id)
         return True
 
-    async def get_agent_by_email(self, email: str):
-        return await self._agents.get_agent_by_email(email)
+    async def get_agent_by_email(self, email: str) -> Agent | None:
+        result = await self._agents.get_by(email=email)
+        if len(result) == 0:
+            return None
+        return result[0]
 
-    async def get_agents_for_account(self, account_id: UUID):
-        return await self._agents.get_agents_for_account(account_id)
+    async def get_agents_for_account(self, account_id: UUID) -> List[Agent]:
+        return await self._agents.get_by(account_id=account_id)
 
-    async def get_all(self):
+    async def get_all(self) -> List[Agent]:
         return await self._agents.get_all()
 
     async def create_agent(self, name: str, email: str, account_id: UUID) -> Agent:
-        if await self._agents.get_agent_by_email(email):
+        if await self.get_agent_by_email(email):
             raise DuplicatedMailException()
 
         result = await self._agents.create(name=name, email=email, account_id=str(account_id), blocked=False)
@@ -68,7 +69,7 @@ class AgentService:
         await self._producer.create_agent(region=account.region, agent_uuid=result.id)
         return Agent.from_orm(result)
 
-    async def delete(self, account_id: UUID, agent_id: UUID):
+    async def delete(self, account_id: UUID, agent_id: UUID) -> None:
         agent = await self._agents.get(agent_id)
         account = await self._accounts.get(account_id)
 
@@ -83,3 +84,6 @@ class AgentService:
 
         await self._producer.delete_agent(region=account.region, agent_uuid=agent_id)
         logger.info(f'Agent {agent_id} was deleted')
+
+    def get_account_repository(self) -> AbstractRepository:
+        return self._accounts

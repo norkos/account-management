@@ -1,11 +1,12 @@
 import logging
 from datetime import timedelta
+from typing import List
 
 from uuid import UUID
 
 from aioredis import Redis
 
-from acm_service.data_base.repositories import AccountRepository, AgentRepository
+from acm_service.data_base.repositories import AccountRepository, AgentRepository, AbstractRepository
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.data_base.schemas import Agent, Account, AccountWithoutAgents
 from acm_service.utils.env import REDIS_CACHE_INVALIDATION_IN_SECONDS
@@ -37,10 +38,10 @@ class Cache:
         return await self._redis.get(f'{namespace}:{key}')
 
 
-class AccountCachedRepository(AccountRepository):
+class AccountCachedRepository(AbstractRepository):
 
     def __init__(self, cache: Cache = Cache.get_instance()):
-        super().__init__()
+        self._account_repository = AccountRepository()
         self._cache = cache
 
     async def update_cache(self, account: AccountWithoutAgents) -> None:
@@ -56,22 +57,40 @@ class AccountCachedRepository(AccountRepository):
         logger.debug('Cache hit')
         return Account.parse_raw(from_cache)
 
-    async def get(self, account_uuid: UUID) -> Account | None:
+    async def get(self, account_uuid: UUID) -> AccountWithoutAgents | None:
         from_cache = await self.get_from_cache(account_uuid)
         if from_cache:
             return from_cache
 
-        result = await super().get(account_uuid)
+        result = await self._account_repository.get(account_uuid)
         if result:
             await self.update_cache(result)
 
         return result
 
+    async def get_by(self, **kwargs) -> List[AccountWithoutAgents]:
+        return await self._account_repository.get_by(**kwargs)
 
-class AgentCachedRepository(AgentRepository):
+    async def get_all(self) -> List[AccountWithoutAgents]:
+        return await self._account_repository.get_all()
+
+    async def create(self, **kwargs) -> AccountWithoutAgents:
+        return await self._account_repository.create(**kwargs)
+
+    async def delete(self, reference) -> None:
+        await self._account_repository.delete(reference)
+
+    async def delete_all(self) -> None:
+        await self._account_repository.delete_all()
+
+    async def update(self, reference, **kwargs) -> None:
+        await self._account_repository.update(reference, **kwargs)
+
+
+class AgentCachedRepository(AbstractRepository):
 
     def __init__(self, cache: Cache = Cache.get_instance()):
-        super().__init__()
+        self._agent_repository = AgentRepository()
         self._cache = cache
 
     async def update_cache(self, agent: Agent) -> None:
@@ -92,8 +111,26 @@ class AgentCachedRepository(AgentRepository):
         if from_cache:
             return from_cache
 
-        result = await super().get(agent_uuid)
+        result = await self._agent_repository.get(agent_uuid)
         if result:
             await self.update_cache(result)
 
         return result
+
+    async def get_by(self, **kwargs) -> List[Agent]:
+        return await self._agent_repository.get_by(**kwargs)
+
+    async def get_all(self) -> List[Agent]:
+        return await self._agent_repository.get_all()
+
+    async def create(self, **kwargs) -> Agent:
+        return await self._agent_repository.create(**kwargs)
+
+    async def delete(self, reference) -> None:
+        await self._agent_repository.delete(reference)
+
+    async def delete_all(self) -> None:
+        await self._agent_repository.delete_all()
+
+    async def update(self, reference, **kwargs) -> None:
+        await self._agent_repository.update(reference, **kwargs)

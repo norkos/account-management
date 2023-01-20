@@ -18,7 +18,7 @@ from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
 from acm_service.events.connection import disconnect_event_broker
-from acm_service.events.producer import get_event_producer, get_local_event_producer
+from acm_service.events.producer import get_event_producer
 from acm_service.events.consumer import get_rabbit_consumer
 from acm_service.cache.repositories import Cache
 
@@ -95,7 +95,6 @@ async def startup():
         await prepare_event_consumer()
         await prepare_event_producer()
     else:
-        app.dependency_overrides[get_event_producer] = get_local_event_producer
         logger.info('Dispatching events was temporary disabled')
 
     if len(REDIS_URL) != 0:
