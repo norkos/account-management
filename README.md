@@ -11,12 +11,12 @@ The goal of the project was to play with the Microservice architecture and impro
 
 ### Architecture
 
-![Papertrail](doc/arch.jpeg)
+![Papertrail](doc/arch.jpg)
 
 
 ### What is used here?
 - FastAPI
-  - ![img.png](doc/img.png)
+  - ![img.png](doc/rest.jpg)
   - pagination for REST requests
 - Postgres
   - asyncio

@@ -30,7 +30,7 @@ logger = logging.getLogger(DEFAULT_LOGGER)
 app = FastAPI(
     debug=DEBUG_REST,
     title='account-management-service',
-    version='1.1',
+    version='2.0',
     docs_url='/_swagger'
 )
 app.include_router(account_router)
