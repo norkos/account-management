@@ -57,8 +57,6 @@ The goal of the project was to play with the Microservice architecture and impro
     - solution: research ;)
 
 ### TODO list
-- repository pattern for DB and cache abstraction
-- real async req to db
 - extend load tests to inject events
 - play more with Heroku
   - check what resilience can be supported by Heroku
