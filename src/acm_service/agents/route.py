@@ -7,7 +7,7 @@ from fastapi_pagination import paginate
 
 from acm_service.agents.schema import AgentCreate, Agent
 from acm_service.utils.http_exceptions import raise_not_found, raise_email_already_used, raise_bad_request
-from acm_service.dependencies import get_token_header, get_agent_service
+from acm_service.utils.dependencies import get_token_header, get_agent_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
 from acm_service.agents.service import AgentService

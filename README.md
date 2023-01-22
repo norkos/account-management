@@ -46,10 +46,15 @@ The goal of the project was to play with the Microservice architecture and impro
    - Liberato
 
 ### WIP LIST
-- find out the bottleneck causing drop in Locust reports
-  - ![img.png](doc/locust.jpg) 
-  - issue is related to too many connections to DB. Connection pooling is not helping. Cache needed
-  - Working on Redis
+- solve the bottleneck causing drop in Locust reports
+  - ![img.png](doc/locust.jpg)
+  - interaction 1: 
+    - issue is related to too many connections to DB. Connection pooling is not helping. Cache needed
+    - solution: getting accounts/agents added into Redis
+    - ![img.png](doc/after_redis_1.jpg) 
+  - interaction 2: 
+    - next bottleneck is RabbitMQ capacity and extending the number of channels opened has reached the channel_max (2047)
+    - solution: research ;)
 
 ### TODO list
 - repository pattern for DB and cache abstraction

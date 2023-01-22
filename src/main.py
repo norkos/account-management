@@ -13,7 +13,7 @@ from acm_service.accounts.route import router as account_router
 from acm_service.agents.route import router as agent_router
 from acm_service.utils.dev_controller import router as dev_router
 from acm_service.utils.env import PORT, REDIS_URL
-from acm_service.dependencies import get_event_broker_connection, \
+from acm_service.utils.dependencies import get_event_broker_connection, \
     get_cache_connection, get_agent_service, get_account_service, get_agent_service_with_cache, \
     get_account_service_with_cache
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN

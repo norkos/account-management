@@ -7,7 +7,7 @@ from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.env import ENCODING
-from acm_service.dependencies import get_agent_service
+from acm_service.utils.dependencies import get_agent_service
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 

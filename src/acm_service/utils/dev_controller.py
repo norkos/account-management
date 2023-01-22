@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import Depends
 from fastapi import APIRouter, status
 
-from acm_service.dependencies import get_token_header, get_2fa_token_header, get_account_service
+from acm_service.utils.dependencies import get_token_header, get_2fa_token_header, get_account_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.accounts.service import AccountService
 

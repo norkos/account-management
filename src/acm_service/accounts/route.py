@@ -7,7 +7,7 @@ from fastapi_pagination import paginate
 
 from acm_service.accounts.schema import AccountWithoutAgents, Account, AccountCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_email_already_used
-from acm_service.dependencies import get_token_header, get_account_service
+from acm_service.utils.dependencies import get_token_header, get_account_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
 from acm_service.accounts.service import AccountService
