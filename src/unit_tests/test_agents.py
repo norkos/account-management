@@ -10,9 +10,9 @@ from pydantic import EmailStr
 from fastapi.testclient import TestClient
 
 from acm_service.utils.env import AUTH_TOKEN
-from acm_service.data_base.schemas import Agent
-from acm_service.services.agent_service import AgentService
-from acm_service.services.utils import DuplicatedMailException, InconsistencyException
+from acm_service.agents.schema import Agent
+from acm_service.agents.service import AgentService
+from acm_service.utils.http_exceptions import InconsistencyException, DuplicatedMailException
 
 from main import app
 

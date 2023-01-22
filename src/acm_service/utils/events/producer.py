@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from uuid import uuid4, UUID
+from uuid import UUID
 
 from aio_pika import ExchangeType, Message, DeliveryMode
 from aio_pika.abc import AbstractRobustConnection
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.env import ENCODING, CLOUDAMQP_RETRIES, CLOUDAMQP_TIMEOUT
-from acm_service.data_base.schemas import RegionEnum
+from acm_service.accounts.schema import RegionEnum
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 

@@ -5,9 +5,10 @@ import namegenerator
 from aio_pika.abc import AbstractRobustConnection
 from pydantic import EmailStr
 
-from acm_service.data_base.repositories import AccountRepository, AbstractRepository
-from acm_service.events.producer import EventProducer
-from acm_service.data_base.schemas import Account, Agent, RegionEnum
+from acm_service.utils.database.repository import AbstractRepository
+from acm_service.utils.events.producer import EventProducer
+from acm_service.accounts.schema import RegionEnum, Account
+from acm_service.agents.schema import Agent
 
 
 def generate_random_mail() -> str:

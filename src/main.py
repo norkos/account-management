@@ -9,18 +9,20 @@ from fastapi_pagination import add_pagination
 from scout_apm.api import Config
 from scout_apm.async_.starlette import ScoutMiddleware
 
+from acm_service.accounts.route import router as account_router
+from acm_service.agents.route import router as agent_router
+from acm_service.utils.dev_controller import router as dev_router
 from acm_service.utils.env import PORT, REDIS_URL
-from acm_service.routers import accounts, agents, dev
 from acm_service.dependencies import get_event_broker_connection, \
     get_cache_connection, get_agent_service, get_account_service, get_agent_service_with_cache, \
     get_account_service_with_cache
 from acm_service.utils.env import ENABLE_EVENTS, SCOUT_KEY, TWO_FA, AUTH_TOKEN
 from acm_service.utils.logconf import log_config, DEFAULT_LOGGER
 from acm_service.utils.env import DEBUG_REST, DEBUG_LOGGER_LEVEL
-from acm_service.events.connection import disconnect_event_broker
-from acm_service.events.producer import get_event_producer
-from acm_service.events.consumer import get_rabbit_consumer
-from acm_service.cache.repositories import Cache
+from acm_service.utils.events.connection import disconnect_event_broker
+from acm_service.utils.events.producer import get_event_producer
+from acm_service.utils.events.consumer import get_rabbit_consumer
+from acm_service.utils.cache.repositories import Cache
 
 dictConfig(log_config)
 logger = logging.getLogger(DEFAULT_LOGGER)
@@ -31,9 +33,9 @@ app = FastAPI(
     version='1.1',
     docs_url='/_swagger'
 )
-app.include_router(accounts.router)
-app.include_router(agents.router)
-app.include_router(dev.router)
+app.include_router(account_router)
+app.include_router(agent_router)
+app.include_router(dev_router)
 
 Config.set(
     key=SCOUT_KEY,

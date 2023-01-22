@@ -5,13 +5,13 @@ from fastapi import Depends
 from fastapi import APIRouter, status
 from fastapi_pagination import paginate
 
-from acm_service.data_base.schemas import Agent, AgentCreate
+from acm_service.agents.schema import AgentCreate, Agent
 from acm_service.utils.http_exceptions import raise_not_found, raise_email_already_used, raise_bad_request
 from acm_service.dependencies import get_token_header, get_agent_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
-from acm_service.services.agent_service import AgentService
-from acm_service.services.utils import DuplicatedMailException, InconsistencyException
+from acm_service.agents.service import AgentService
+from acm_service.utils.http_exceptions import InconsistencyException, DuplicatedMailException
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 

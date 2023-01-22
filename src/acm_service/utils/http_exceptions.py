@@ -12,3 +12,11 @@ def raise_bad_request(detail: str = None):
 
 def raise_email_already_used():
     raise_bad_request('E-mail is already used')
+
+
+class InconsistencyException(Exception):
+    pass
+
+
+class DuplicatedMailException(Exception):
+    pass

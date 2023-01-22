@@ -6,9 +6,9 @@ import namegenerator
 import pytest
 from pydantic import ValidationError
 
-from acm_service.data_base.schemas import AccountWithoutAgents
-from acm_service. services.agent_service import AgentService
-from acm_service.services.utils import DuplicatedMailException, InconsistencyException
+from acm_service.accounts.schema import AccountWithoutAgents
+from acm_service.agents.service import AgentService
+from acm_service.utils.http_exceptions import InconsistencyException, DuplicatedMailException
 
 from unit_tests.utils import RabbitProducerStub,  AgentRepositoryStub, AccountRepositoryStub
 

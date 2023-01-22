@@ -3,10 +3,10 @@ from typing import List
 from uuid import UUID
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.data_base.repositories import AbstractRepository
-from acm_service.events.producer import EventProducer
-from acm_service.data_base.schemas import Agent
-from acm_service.services.utils import DuplicatedMailException, InconsistencyException
+from acm_service.utils.database.repository import AbstractRepository
+from acm_service.utils.events.producer import EventProducer
+from acm_service.agents.schema import Agent
+from acm_service.utils.http_exceptions import InconsistencyException, DuplicatedMailException
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 

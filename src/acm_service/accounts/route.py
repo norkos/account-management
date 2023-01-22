@@ -5,13 +5,13 @@ from fastapi import Depends
 from fastapi import APIRouter, status
 from fastapi_pagination import paginate
 
-from acm_service.data_base import schemas
+from acm_service.accounts.schema import AccountWithoutAgents, Account, AccountCreate
 from acm_service.utils.http_exceptions import raise_not_found, raise_email_already_used
 from acm_service.dependencies import get_token_header, get_account_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
 from acm_service.utils.pagination import Page
-from acm_service.services.account_service import AccountService
-from acm_service.services.utils import DuplicatedMailException
+from acm_service.accounts.service import AccountService
+from acm_service.utils.http_exceptions import DuplicatedMailException
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
@@ -22,13 +22,13 @@ router = APIRouter(
 )
 
 
-@router.get('', response_model=Page[schemas.AccountWithoutAgents])
+@router.get('', response_model=Page[AccountWithoutAgents])
 async def read_accounts(account_service: AccountService = Depends(get_account_service)):
     result = await account_service.get_all()
     return paginate(result)
 
 
-@router.get('/{account_id}', response_model=schemas.AccountWithoutAgents)
+@router.get('/{account_id}', response_model=AccountWithoutAgents)
 async def read_account(account_id: UUID, account_service: AccountService = Depends(get_account_service)):
     result = await account_service.get(account_id)
     if result is None:
@@ -37,7 +37,7 @@ async def read_account(account_id: UUID, account_service: AccountService = Depen
     return result
 
 
-@router.post('/generate_company_report/{account_id}', response_model=schemas.Account)
+@router.post('/generate_company_report/{account_id}', response_model=Account)
 async def generate_company_report(account_id: UUID, account_service: AccountService = Depends(get_account_service)):
     result = await account_service.get_with_agents(account_id)
     if result is None:
@@ -51,8 +51,8 @@ async def delete_account(account_id: UUID, account_service: AccountService = Dep
     await account_service.delete(account_id)
 
 
-@router.post('', response_model=schemas.AccountWithoutAgents)
-async def create_account(account: schemas.AccountCreate,
+@router.post('', response_model=AccountWithoutAgents)
+async def create_account(account: AccountCreate,
                          account_service: AccountService = Depends(get_account_service)):
     try:
         return await account_service.create_account(name=account.name,

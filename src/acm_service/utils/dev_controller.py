@@ -6,7 +6,7 @@ from fastapi import APIRouter, status
 
 from acm_service.dependencies import get_token_header, get_2fa_token_header, get_account_service
 from acm_service.utils.logconf import DEFAULT_LOGGER
-from acm_service.services.account_service import AccountService
+from acm_service.accounts.service import AccountService
 
 logger = logging.getLogger(DEFAULT_LOGGER)
 
