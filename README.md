@@ -1,6 +1,6 @@
 ## What is this project about ?
 
-The goal of the project was to play with the Microservice architecture and improve Python skills 
+The goal of the project was to play with the Microservice architecture.
 
 ### User stories
 
