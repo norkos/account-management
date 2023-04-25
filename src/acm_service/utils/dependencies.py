@@ -1,7 +1,7 @@
 import asyncio
 
 from aio_pika.abc import AbstractRobustConnection
-from aioredis import Redis
+from redis import Redis
 from fastapi import Header
 
 from acm_service.utils.env import AUTH_TOKEN, TWO_FA

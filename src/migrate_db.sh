@@ -1,1 +1,1 @@
-alembic upgrade head
+pipenv run alembic upgrade head

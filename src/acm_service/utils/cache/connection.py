@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from aioredis import Redis
+from redis import Redis
 
 from acm_service.utils.env import REDIS_URL, REDIS_PORT, REDIS_RETRIES, REDIS_TIMEOUT
 from acm_service.utils.logconf import DEFAULT_LOGGER

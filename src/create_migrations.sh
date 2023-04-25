@@ -1,1 +1,1 @@
-alembic revision --autogenerate -m 'Migration name'
+pipenv run alembic revision --autogenerate -m 'Migration name'
