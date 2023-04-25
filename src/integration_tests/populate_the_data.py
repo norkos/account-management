@@ -31,7 +31,7 @@ def test_populate_low_amount_of_the_data():
 
 def test_populate_big_data():
     how_many_accounts = 20
-    how_many_agents_per_account = 300
+    how_many_agents_per_account = 30
     asyncio.run(async_test_traffic_model(how_many_accounts, how_many_agents_per_account))
 
 

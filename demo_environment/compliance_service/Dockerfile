@@ -8,5 +8,4 @@ COPY . /app
 RUN pip install --no-cache-dir pipenv
 RUN pipenv install
 
-WORKDIR /app/src
 CMD pipenv run python main.py
