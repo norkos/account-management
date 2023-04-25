@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from redis import Redis
+from aioredis import Redis
 
 from acm_service.utils.logconf import DEFAULT_LOGGER
 

@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from acm_service.accounts.schema import RegionEnum
+from accounts.schema import RegionEnum
 from integration_tests.consumer import Consumer
 from integration_tests.producer import Producer
 from integration_tests.utils import RestClient, generate_account_details, generate_agent_details
