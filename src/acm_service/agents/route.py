@@ -22,9 +22,9 @@ router = APIRouter(
 
 
 @router.get('/accounts/{account_id}/agents/{agent_id}', response_model=Agent)
-async def read_agent(agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)):
+async def read_agent(account_id: UUID, agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)):
     agent = await agent_service.get(agent_id)
-    if not agent:
+    if not agent or agent.account_id != account_id:
         raise_not_found(f'Agent {agent_id} not found')
     return agent
 
