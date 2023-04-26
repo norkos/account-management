@@ -5,7 +5,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install --no-cache-dir pipenv
-RUN pipenv install
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-CMD pipenv run python main.py
+CMD python main.py
